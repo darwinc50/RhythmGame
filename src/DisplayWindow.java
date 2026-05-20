@@ -87,7 +87,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         } else {
             g.setColor(Color.BLACK);
         }
-        g.drawString("Score: " + score, 50, 30);
+        //g.drawString("Score: " + score, 50, 30);
     }
 
     @Override
