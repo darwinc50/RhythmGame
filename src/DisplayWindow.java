@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class DisplayWindow extends JPanel implements MouseListener, KeyListener, ActionListener {
+    private static double accuracy = 12.923;
     private int score;
     private boolean yellowColor;
     private int marioX;
@@ -87,7 +88,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         } else {
             g.setColor(Color.BLACK);
         }
-        //g.drawString("Score: " + score, 50, 30);
+        g.drawString("Accuracy: " + Math.round(accuracy * 100.0) / 100.0, 50, 30);
     }
 
     @Override
