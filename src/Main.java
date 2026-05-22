@@ -32,6 +32,7 @@ public class Main {
         frame.setVisible(true);
 
         PlaySong takeAHint = new PlaySong(new File("src/songs/takeahint.wav"));
-        takeAHint.playSound();
+        PlaySong dangerousWoman = new PlaySong(new File("src/songs/dangerouswoman.wav"));
+        dangerousWoman.playSound();
     }
 }
