@@ -22,4 +22,17 @@ public class PlaySong {
             e.printStackTrace();
         }
     }
+
+    public void stopSound() {
+        try {
+            // Place your .wav file in the resources folder (e.g., src/main/resources/sound.wav
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(song);
+
+            Clip clip = AudioSystem.getClip();
+            clip.open(audioStream);
+            clip.stop();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

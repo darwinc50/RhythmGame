@@ -34,5 +34,13 @@ public class Main {
         PlaySong takeAHint = new PlaySong(new File("src/songs/takeahint.wav"));
         PlaySong dangerousWoman = new PlaySong(new File("src/songs/dangerouswoman.wav"));
         dangerousWoman.playSound();
+        try {
+            Thread.sleep(5000);
+            dangerousWoman.stopSound();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+
     }
 }
