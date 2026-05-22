@@ -1,5 +1,6 @@
 import javax.swing.JFrame;
 import java.awt.*;
+import java.io.File;
 
 public class Main {
     public static void main(String[] args) {
@@ -29,5 +30,8 @@ public class Main {
 
         // call setVisible after everything else
         frame.setVisible(true);
+
+        PlaySong takeAHint = new PlaySong(new File("src/songs/takeahint.wav"));
+        takeAHint.playSound();
     }
 }
