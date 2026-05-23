@@ -9,19 +9,32 @@ import java.io.IOException;
 
 
 public class DisplayWindow extends JPanel implements MouseListener, KeyListener, ActionListener {
-    private static double accuracy = 12.923;
+    private static double accuracy = 0.0; //yes this works correctly i checked it goes to #.##
     private int score;
     private boolean yellowColor;
     private BufferedImage background;
     private boolean[] pressedKeys;
     private Timer timer;
     private boolean gameOver;
+    private PlaySong currentSong;
+    private JButton stopButton;
+    private JButton resumeButton;
+    private JButton startButton;
 
-    public DisplayWindow() {
-        score = 0;
-
+    public DisplayWindow(PlaySong currentSong) {
+        this.currentSong = currentSong;
+        startButton = new JButton("Start Music");
+        startButton.addActionListener(e -> currentSong.playSound());
+        stopButton = new JButton("Stop Music");
+        stopButton.addActionListener(e -> currentSong.stopSound());
+        resumeButton = new JButton("Resume Music");
+        resumeButton.addActionListener(e -> currentSong.resumeSound());
+        add(startButton);
+        add(stopButton);
+        add(resumeButton);
         yellowColor = true;
         gameOver = false;
+        score = 0;
         timer = new Timer(10, this);
         pressedKeys = new boolean[128]; // 128 keys on keyboard, max keycode is 127
         try {

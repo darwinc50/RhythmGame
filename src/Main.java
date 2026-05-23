@@ -8,9 +8,10 @@ public class Main {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(1920, 1080);
         frame.setLocationRelativeTo(null);
-
+        PlaySong dangerousWoman = new PlaySong(new File("src/songs/dangerouswoman.wav"));
+        PlaySong takeAHint = new PlaySong(new File("src/songs/takeahint.wav"));
         // create a DisplayPanel object
-        DisplayWindow panel = new DisplayWindow();
+        DisplayWindow panel = new DisplayWindow(takeAHint);
 
         // add it to the frame
         frame.add(panel);
@@ -30,17 +31,6 @@ public class Main {
 
         // call setVisible after everything else
         frame.setVisible(true);
-
-        PlaySong takeAHint = new PlaySong(new File("src/songs/takeahint.wav"));
-        PlaySong dangerousWoman = new PlaySong(new File("src/songs/dangerouswoman.wav"));
-        dangerousWoman.playSound();
-        try {
-            Thread.sleep(5000);
-            dangerousWoman.stopSound();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-
 
     }
 }
