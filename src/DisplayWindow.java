@@ -98,7 +98,6 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     @Override
     public void keyPressed(KeyEvent e) {
         int keyCode = e.getKeyCode();
-        System.out.println("key pressed: " + keyCode);
         pressedKeys[keyCode] = true;
         if (keyCode == KeyEvent.VK_F11) {
             if (parentFrame.isUndecorated()) {
