@@ -11,9 +11,8 @@ public class Main {
         frame.setLocationRelativeTo(null);
         PlaySong dangerousWoman = new PlaySong(new File("src/songs/dangerouswoman.wav"));
         PlaySong takeAHint = new PlaySong(new File("src/songs/takeahint.wav"));
-        PlaySong iminlove = new PlaySong(new File("src/songs/iminlove.wav"));
         // create a DisplayPanel object
-        DisplayWindow panel = new DisplayWindow(iminlove,frame);
+        DisplayWindow panel = new DisplayWindow(dangerousWoman,frame);
 
         // add it to the frame
         frame.add(panel);

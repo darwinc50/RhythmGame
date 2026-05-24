@@ -7,12 +7,11 @@ import java.io.File;
 import java.io.IOException;
 import java.awt.GraphicsEnvironment;
 import java.awt.GraphicsDevice;
-
+import java.util.ArrayList;
 
 
 public class DisplayWindow extends JPanel implements MouseListener, KeyListener, ActionListener {
     private static double accuracy = 0.0; //yes this works correctly i checked it goes to #.##
-    private int score;
     private BufferedImage background;
     private boolean[] pressedKeys;
     private Timer timer;
@@ -26,6 +25,14 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     private boolean visible;
     private int screen;
     private JButton playButton;
+    private JButton returnButton;
+
+    private int perfectCount;
+    private int greatCount;
+    private int goodCount;
+    private int badCount;
+    private int missCount;
+    private int score;
 
     public DisplayWindow(PlaySong currentSong, JFrame frame) {
         this.parentFrame = frame;
@@ -39,10 +46,12 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         playButton = new JButton("PLAY");
         playButton.addActionListener(e -> screen = 1);
         settingsButton = new JButton("Settings");
-        settingsButton.addActionListener(e -> screen = 3); //dawg idk make it go to settings page ig
+        settingsButton.addActionListener(e -> screen = 3); //dawg IDK make it go to settings page ig
         add(startButton);
         add(stopButton);
         add(resumeButton);
+        returnButton = new JButton("Return To Home Page");
+        returnButton.addActionListener(e -> screen = 0);
         visible = stopButton.isVisible();
         stopButton.setVisible(!visible);
         resumeButton.setVisible(!visible);
@@ -71,10 +80,20 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
 
         if (screen == 0) { //home screen
             try {
-                g.drawImage(background, 0, 0, null);
+                returnButton.setVisible(false);
+                g.drawString("very good game", 1980/2, 100);
+                g.setFont(new Font("Cosmic Sans MS", Font.PLAIN,100));
+                playButton.setSize(500, 200);
+                playButton.setLocation(1980/2 - 250,1080/2-300); // wow we centered a button apple hire us please
                 add(playButton);
                 playButton.setVisible(screen == 0);
+                settingsButton.setVisible(screen == 0);
+                settingsButton.setSize(500,200);
+                settingsButton.setLocation(1980/2 -250,1080/2);
+                add(settingsButton);
+                settingsButton.setVisible(true);
                 background = ImageIO.read(new File("src/m2.png"));
+                g.drawImage(background, 0, 0, null);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -83,20 +102,33 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         if (screen == 1) { //song select
             try {
                 playButton.setVisible(false);
+                settingsButton.setVisible(false);
                 background = ImageIO.read(new File("src/spinnin.png"));
+                g.drawImage(background, 0, 0, null);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
 
         if (screen == 2) { //actual game
+            playButton.setVisible(false);
+            settingsButton.setVisible(false);
             g.drawString("Accuracy: " + Math.round(accuracy * 100.0) / 100.0, 50, 30);
         }
         if (screen == 3){ //settings
-
+            try {
+                add(returnButton);
+                returnButton.setVisible(true);
+                playButton.setVisible(false);
+                settingsButton.setVisible(false);
+                background = ImageIO.read(new File("src/astolfo.jpg"));
+                g.drawImage(background, 0, 0, null);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
         // set font and color of text
-        g.setFont(new Font("Times New Roman", Font.BOLD, 16));
+        g.setFont(new Font("Arial", Font.BOLD, 16));
 
 
     }
@@ -149,7 +181,6 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
                     resumeButton.setVisible(visible);
                     startButton.setVisible(visible);
                 } else {
-                    background = ImageIO.read(new File("src/anothermooda.jpg"));
                     stopButton.setVisible(visible);
                     resumeButton.setVisible(visible);
                     startButton.setVisible(visible);
