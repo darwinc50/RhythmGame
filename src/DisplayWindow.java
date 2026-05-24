@@ -21,8 +21,11 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     private JButton stopButton;
     private JButton resumeButton;
     private JButton startButton;
+    private JButton settingsButton;
     private JFrame parentFrame;
     private boolean visible;
+    private int screen;
+    private JButton playButton;
 
     public DisplayWindow(PlaySong currentSong, JFrame frame) {
         this.parentFrame = frame;
@@ -33,6 +36,10 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         stopButton.addActionListener(e -> currentSong.stopSound());
         resumeButton = new JButton("Resume Music");
         resumeButton.addActionListener(e -> currentSong.resumeSound());
+        playButton = new JButton("PLAY");
+        playButton.addActionListener(e -> screen = 1);
+        settingsButton = new JButton("Settings");
+        settingsButton.addActionListener(e -> screen = 3); //dawg idk make it go to settings page ig
         add(startButton);
         add(stopButton);
         add(resumeButton);
@@ -42,6 +49,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         startButton.setVisible(!visible);
         gameOver = false;
         score = 0;
+        screen = 0;
         timer = new Timer(10, this);
         pressedKeys = new boolean[128]; // 128 keys on keyboard, max keycode is 127
         try {
@@ -60,22 +68,37 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-        g.drawImage(background, 0, 0, null);
 
-        if (gameOver) {
-            g.setFont(new Font("Arial", Font.BOLD, 32));
-            if (score == 10) {
-                g.drawString("GAME OVER, YOU WIN!", 350, 240);
-            } else {
-                g.drawString("GAME OVER, YOU LOSE :(", 350, 240);
+        if (screen == 0) { //home screen
+            try {
+                g.drawImage(background, 0, 0, null);
+                add(playButton);
+                playButton.setVisible(screen == 0);
+                background = ImageIO.read(new File("src/m2.png"));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         }
 
+        if (screen == 1) { //song select
+            try {
+                playButton.setVisible(false);
+                background = ImageIO.read(new File("src/spinnin.png"));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
 
+        if (screen == 2) { //actual game
+            g.drawString("Accuracy: " + Math.round(accuracy * 100.0) / 100.0, 50, 30);
+        }
+        if (screen == 3){ //settings
 
+        }
         // set font and color of text
         g.setFont(new Font("Times New Roman", Font.BOLD, 16));
-        g.drawString("Accuracy: " + Math.round(accuracy * 100.0) / 100.0, 50, 30);
+
+
     }
 
     @Override
@@ -88,7 +111,6 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
 
     @Override
     public void mouseReleased(MouseEvent e) {
-
     }
 
     @Override
@@ -143,9 +165,6 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         int key = e.getKeyCode();
         pressedKeys[key] = false;
     }
-
-
-
 
     @Override
     public void actionPerformed(ActionEvent e) {
