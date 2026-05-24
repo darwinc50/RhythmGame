@@ -40,7 +40,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         timer = new Timer(10, this);
         pressedKeys = new boolean[128]; // 128 keys on keyboard, max keycode is 127
         try {
-            background = ImageIO.read(new File("src/m2.png")); //change background
+            background = ImageIO.read(new File("src/anothermooda.jpg")); //change background
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
