@@ -22,6 +22,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     private JButton resumeButton;
     private JButton startButton;
     private JFrame parentFrame;
+    private boolean visible;
 
     public DisplayWindow(PlaySong currentSong, JFrame frame) {
         this.parentFrame = frame;
@@ -35,6 +36,10 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         add(startButton);
         add(stopButton);
         add(resumeButton);
+        visible = stopButton.isVisible();
+        stopButton.setVisible(!visible);
+        resumeButton.setVisible(!visible);
+        startButton.setVisible(!visible);
         gameOver = false;
         score = 0;
         timer = new Timer(10, this);
@@ -112,6 +117,24 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
                 parentFrame.setVisible(true);
             }
             requestFocusInWindow(); // regain focus after toggle
+        }
+        if (keyCode == KeyEvent.VK_ESCAPE){
+            visible= !visible;
+            try {
+                if (visible) {
+                    background = ImageIO.read(new File("src/astolfo.jpg"));
+                    stopButton.setVisible(visible);
+                    resumeButton.setVisible(visible);
+                    startButton.setVisible(visible);
+                } else {
+                    background = ImageIO.read(new File("src/anothermooda.jpg"));
+                    stopButton.setVisible(visible);
+                    resumeButton.setVisible(visible);
+                    startButton.setVisible(visible);
+                }
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
         }
     }
 
