@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.awt.GraphicsEnvironment;
 import java.awt.GraphicsDevice;
 import java.util.ArrayList;
+import javax.swing.JScrollPane;
 
 
 public class DisplayWindow extends JPanel implements MouseListener, KeyListener, ActionListener {
@@ -26,12 +27,17 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     private int screen;
     private JButton playButton;
     private JButton returnButton;
+    private JButton exitButton;
+
+    private JPanel songSelect = new JPanel();
+    private JScrollPane songSelectWindow = new JScrollPane(songSelect);
 
     private int perfectCount;
     private int greatCount;
     private int goodCount;
     private int badCount;
     private int missCount;
+    private int combo;
     private int score;
 
     public DisplayWindow(PlaySong currentSong, JFrame frame) {
@@ -47,22 +53,17 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         playButton.addActionListener(e -> screen = 1);
         settingsButton = new JButton("Settings");
         settingsButton.addActionListener(e -> screen = 3); //dawg IDK make it go to settings page ig
-        add(startButton);
-        add(stopButton);
-        add(resumeButton);
+        exitButton = new JButton("Exit game");
+        exitButton.addActionListener(e->System.exit(0));
         returnButton = new JButton("Return To Home Page");
         returnButton.addActionListener(e -> screen = 0);
-        visible = stopButton.isVisible();
-        stopButton.setVisible(!visible);
-        resumeButton.setVisible(!visible);
-        startButton.setVisible(!visible);
         gameOver = false;
         score = 0;
         screen = 0;
         timer = new Timer(10, this);
         pressedKeys = new boolean[128]; // 128 keys on keyboard, max keycode is 127
         try {
-            background = ImageIO.read(new File("src/anothermooda.jpg")); //change background
+            background = ImageIO.read(new File("src/pictures/anothermooda.jpg")); //change background
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
@@ -80,6 +81,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
 
         if (screen == 0) { //home screen
             try {
+                add(exitButton);
                 returnButton.setVisible(false);
                 g.drawString("very good game", 1980/2, 100);
                 g.setFont(new Font("Cosmic Sans MS", Font.PLAIN,100));
@@ -92,7 +94,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
                 settingsButton.setLocation(1980/2 -250,1080/2);
                 add(settingsButton);
                 settingsButton.setVisible(true);
-                background = ImageIO.read(new File("src/m2.png"));
+                background = ImageIO.read(new File("src/pictures/m2.png"));
                 g.drawImage(background, 0, 0, null);
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -101,13 +103,18 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
 
         if (screen == 1) { //song select
             try {
+                background = ImageIO.read(new File("src/pictures/spinnin.png"));
+                g.drawImage(background, 0, 0, null);
                 playButton.setVisible(false);
                 settingsButton.setVisible(false);
-                background = ImageIO.read(new File("src/spinnin.png"));
-                g.drawImage(background, 0, 0, null);
+                add(returnButton);
+                returnButton.setVisible(true);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+            //songSelect.set
+            songSelectWindow.createVerticalScrollBar();
+            add(songSelectWindow);
         }
 
         if (screen == 2) { //actual game
@@ -121,7 +128,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
                 returnButton.setVisible(true);
                 playButton.setVisible(false);
                 settingsButton.setVisible(false);
-                background = ImageIO.read(new File("src/astolfo.jpg"));
+                background = ImageIO.read(new File("src/pictures/astolfo.jpg"));
                 g.drawImage(background, 0, 0, null);
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -129,30 +136,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         }
         // set font and color of text
         g.setFont(new Font("Arial", Font.BOLD, 16));
-
-
     }
-
-    @Override
-    public void mouseClicked(MouseEvent e) { } // unimplemented
-    // unimplemented because if you move your mouse while clicking, this method isn't
-    // called, so mouseReleased is best
-
-    @Override
-    public void mousePressed(MouseEvent e) { } // unimplemented
-
-    @Override
-    public void mouseReleased(MouseEvent e) {
-    }
-
-    @Override
-    public void mouseEntered(MouseEvent e) { } // unimplemented
-
-    @Override
-    public void mouseExited(MouseEvent e) { } // unimplemented
-
-    @Override
-    public void keyTyped(KeyEvent e) { } // unimplemented
 
     @Override
     public void keyPressed(KeyEvent e) {
@@ -176,14 +160,16 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
             visible= !visible;
             try {
                 if (visible) {
-                    background = ImageIO.read(new File("src/astolfo.jpg"));
+                    background = ImageIO.read(new File("src/pictures/astolfo.jpg"));
                     stopButton.setVisible(visible);
                     resumeButton.setVisible(visible);
                     startButton.setVisible(visible);
+                    returnButton.setVisible(visible);
                 } else {
                     stopButton.setVisible(visible);
                     resumeButton.setVisible(visible);
                     startButton.setVisible(visible);
+                    returnButton.setVisible(visible);
                 }
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
@@ -202,4 +188,24 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
 
         repaint();
     }
+    @Override
+    public void mouseClicked(MouseEvent e) { } // unimplemented
+    // unimplemented because if you move your mouse while clicking, this method isn't
+    // called, so mouseReleased is best
+
+    @Override
+    public void mousePressed(MouseEvent e) { } // unimplemented
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) { } // unimplemented
+
+    @Override
+    public void mouseExited(MouseEvent e) { } // unimplemented
+
+    @Override
+    public void keyTyped(KeyEvent e) { } // unimplemented
 }
