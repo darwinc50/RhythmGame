@@ -43,30 +43,34 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     public DisplayWindow(PlaySong currentSong, JFrame frame) {
         this.parentFrame = frame;
         this.currentSong = currentSong;
+
         startButton = new JButton("Start Music");
         startButton.addActionListener(e -> currentSong.playSound());
         stopButton = new JButton("Stop Music");
         stopButton.addActionListener(e -> currentSong.stopSound());
         resumeButton = new JButton("Resume Music");
         resumeButton.addActionListener(e -> currentSong.resumeSound());
+        returnButton = new JButton("Return To Home Page");
+        returnButton.addActionListener(e -> screen = 0);
         playButton = new JButton("PLAY");
         playButton.addActionListener(e -> screen = 1);
         settingsButton = new JButton("Settings");
         settingsButton.addActionListener(e -> screen = 3); //dawg IDK make it go to settings page ig
         exitButton = new JButton("Exit game");
         exitButton.addActionListener(e->System.exit(0));
-        returnButton = new JButton("Return To Home Page");
-        returnButton.addActionListener(e -> screen = 0);
+
         gameOver = false;
         score = 0;
         screen = 0;
         timer = new Timer(10, this);
         pressedKeys = new boolean[128]; // 128 keys on keyboard, max keycode is 127
+
         try {
             background = ImageIO.read(new File("src/pictures/anothermooda.jpg")); //change background
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
+
         add(exitButton);
         add(playButton);
         add(settingsButton);
@@ -75,6 +79,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         add(stopButton);
         add(startButton);
         add(resumeButton);
+
         stopButton.setVisible(visible);
         resumeButton.setVisible(visible);
         startButton.setVisible(visible);
@@ -131,6 +136,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
             settingsButton.setVisible(false);
             g.drawString("Accuracy: " + Math.round(accuracy * 100.0) / 100.0, 50, 30);
         }
+
         if (screen == 3){ //settings
             try {
                 returnButton.setVisible(true);
@@ -145,6 +151,48 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         // set font and color of text
         g.setFont(new Font("Arial", Font.BOLD, 16));
     }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        int keyCode = e.getKeyCode();
+        pressedKeys[keyCode] = true;
+        if (keyCode == KeyEvent.VK_F11) {
+            if (parentFrame.isUndecorated()) {
+                parentFrame.dispose();
+                parentFrame.setUndecorated(false);
+                parentFrame.setExtendedState(JFrame.NORMAL);
+                parentFrame.setVisible(true);
+            } else {
+                parentFrame.dispose();
+                parentFrame.setUndecorated(true);
+                parentFrame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+                parentFrame.setVisible(true);
+            }
+            requestFocusInWindow();
+        }
+
+        if (keyCode == KeyEvent.VK_ESCAPE) {
+            System.out.println("escape");
+
+            visible = !visible;
+            stopButton.setVisible(visible);
+            resumeButton.setVisible(visible);
+            startButton.setVisible(visible);
+            returnButton.setVisible(visible);
+
+            requestFocusInWindow();
+            revalidate();
+            repaint();
+        }
+    }
+
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+        int key = e.getKeyCode();
+        pressedKeys[key] = false;
+    }
+
     private void drawScaledImage(BufferedImage img, Graphics g, double scaleFactor, int x, int y) {
         if (img == null) return;
 
@@ -170,46 +218,6 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
 
         // Draw the image at the specified x and y coordinates
         g2d.drawImage(img, x, y, targetWidth, targetHeight, null);
-    }
-
-    @Override
-    public void keyPressed(KeyEvent e) {
-        int keyCode = e.getKeyCode();
-        pressedKeys[keyCode] = true;
-        if (keyCode == KeyEvent.VK_F11) {
-            if (parentFrame.isUndecorated()) {
-                parentFrame.dispose();
-                parentFrame.setUndecorated(false);
-                parentFrame.setExtendedState(JFrame.NORMAL);
-                parentFrame.setVisible(true);
-            } else {
-                parentFrame.dispose();
-                parentFrame.setUndecorated(true);
-                parentFrame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-                parentFrame.setVisible(true);
-            }
-            requestFocusInWindow(); // regain focus after toggle
-        }
-        if (keyCode == KeyEvent.VK_ESCAPE) {
-            System.out.println("escape");
-
-            visible = !visible;
-            stopButton.setVisible(visible);
-            resumeButton.setVisible(visible);
-            startButton.setVisible(visible);
-            returnButton.setVisible(visible);
-
-            requestFocusInWindow();
-            revalidate();
-            repaint();
-        }
-    }
-
-
-    @Override
-    public void keyReleased(KeyEvent e) {
-        int key = e.getKeyCode();
-        pressedKeys[key] = false;
     }
 
     @Override
