@@ -23,7 +23,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     private JButton startButton;
     private JButton settingsButton;
     private JFrame parentFrame;
-    private boolean visible;
+    private boolean visible = false;
     private int screen;
     private JButton playButton;
     private JButton returnButton;
@@ -50,10 +50,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         resumeButton = new JButton("Resume Music");
         resumeButton.addActionListener(e -> currentSong.resumeSound());
         playButton = new JButton("PLAY");
-        playButton.addActionListener(e -> {
-            screen = 1;
-            repaint();
-        });
+        playButton.addActionListener(e -> screen = 1);
         settingsButton = new JButton("Settings");
         settingsButton.addActionListener(e -> screen = 3); //dawg IDK make it go to settings page ig
         exitButton = new JButton("Exit game");
@@ -75,6 +72,14 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         add(settingsButton);
         add(returnButton);
         add(songSelectWindow);
+        add(stopButton);
+        add(startButton);
+        add(resumeButton);
+        stopButton.setVisible(visible);
+        resumeButton.setVisible(visible);
+        startButton.setVisible(visible);
+        returnButton.setVisible(visible);
+
 
         addMouseListener(this);
         addKeyListener(this);
@@ -185,26 +190,17 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
             }
             requestFocusInWindow(); // regain focus after toggle
         }
-        if (keyCode == KeyEvent.VK_ESCAPE){
+        if (keyCode == KeyEvent.VK_ESCAPE) {
             System.out.println("escape");
-            visible= !visible;
-            try {
-                if (visible) {
-                    background = ImageIO.read(new File("src/pictures/m2.png"));
-                    stopButton.setVisible(visible);
-                    resumeButton.setVisible(visible);
-                    startButton.setVisible(visible);
-                    returnButton.setVisible(visible);
-                } else {
-                    stopButton.setVisible(visible);
-                    resumeButton.setVisible(visible);
-                    startButton.setVisible(visible);
-                    returnButton.setVisible(visible);
-                }
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
+
+            visible = !visible;
+            stopButton.setVisible(visible);
+            resumeButton.setVisible(visible);
+            startButton.setVisible(visible);
+            returnButton.setVisible(visible);
+
             requestFocusInWindow();
+            revalidate();
             repaint();
         }
     }
