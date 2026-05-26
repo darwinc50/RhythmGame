@@ -50,7 +50,10 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         resumeButton = new JButton("Resume Music");
         resumeButton.addActionListener(e -> currentSong.resumeSound());
         playButton = new JButton("PLAY");
-        playButton.addActionListener(e -> screen = 1);
+        playButton.addActionListener(e -> {
+            screen = 1;
+            repaint();
+        });
         settingsButton = new JButton("Settings");
         settingsButton.addActionListener(e -> screen = 3); //dawg IDK make it go to settings page ig
         exitButton = new JButton("Exit game");
@@ -67,6 +70,11 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
+        add(exitButton);
+        add(playButton);
+        add(settingsButton);
+        add(returnButton);
+        add(songSelectWindow);
 
         addMouseListener(this);
         addKeyListener(this);
@@ -81,21 +89,19 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
 
         if (screen == 0) { //home screen
             try {
-                add(exitButton);
+                background = ImageIO.read(new File("src/pictures/m2.png"));
+                g.drawImage(background, 0, 0, null);
                 returnButton.setVisible(false);
                 g.drawString("very good game", 1980/2, 100);
                 g.setFont(new Font("Cosmic Sans MS", Font.PLAIN,100));
                 playButton.setSize(500, 200);
                 playButton.setLocation(1980/2 - 250,1080/2-300); // wow we centered a button apple hire us please
-                add(playButton);
                 playButton.setVisible(screen == 0);
                 settingsButton.setVisible(screen == 0);
                 settingsButton.setSize(500,200);
                 settingsButton.setLocation(1980/2 -250,1080/2);
-                add(settingsButton);
                 settingsButton.setVisible(true);
-                background = ImageIO.read(new File("src/pictures/m2.png"));
-                g.drawImage(background, 0, 0, null);
+
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -104,17 +110,15 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         if (screen == 1) { //song select
             try {
                 background = ImageIO.read(new File("src/pictures/spinnin.png"));
-                g.drawImage(background, 0, 0, null);
+                drawScaledImage(background, g, 0.5, 50, 100);
                 playButton.setVisible(false);
                 settingsButton.setVisible(false);
-                add(returnButton);
                 returnButton.setVisible(true);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
             //songSelect.set
             songSelectWindow.createVerticalScrollBar();
-            add(songSelectWindow);
         }
 
         if (screen == 2) { //actual game
@@ -124,7 +128,6 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         }
         if (screen == 3){ //settings
             try {
-                add(returnButton);
                 returnButton.setVisible(true);
                 playButton.setVisible(false);
                 settingsButton.setVisible(false);
@@ -136,6 +139,32 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         }
         // set font and color of text
         g.setFont(new Font("Arial", Font.BOLD, 16));
+    }
+    private void drawScaledImage(BufferedImage img, Graphics g, double scaleFactor, int x, int y) {
+        if (img == null) return;
+
+        int originalWidth = img.getWidth();
+        int originalHeight = img.getHeight();
+        double aspectRatio = (double) originalWidth / originalHeight;
+
+        // Calculate maximum target bounds based on window size and scale factor
+        int targetWidth = (int) (getWidth() * scaleFactor);
+        int targetHeight = (int) (getHeight() * scaleFactor);
+
+        // Adjust dimensions to strictly preserve aspect ratio
+        if (targetWidth / (double) targetHeight > aspectRatio) {
+            targetWidth = (int) (targetHeight * aspectRatio);
+        } else {
+            targetHeight = (int) (targetWidth / aspectRatio);
+        }
+
+        // makes the image be higher quality rather than running fast
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+
+        // Draw the image at the specified x and y coordinates
+        g2d.drawImage(img, x, y, targetWidth, targetHeight, null);
     }
 
     @Override
@@ -157,10 +186,11 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
             requestFocusInWindow(); // regain focus after toggle
         }
         if (keyCode == KeyEvent.VK_ESCAPE){
+            System.out.println("escape");
             visible= !visible;
             try {
                 if (visible) {
-                    background = ImageIO.read(new File("src/pictures/astolfo.jpg"));
+                    background = ImageIO.read(new File("src/pictures/m2.png"));
                     stopButton.setVisible(visible);
                     resumeButton.setVisible(visible);
                     startButton.setVisible(visible);
@@ -174,8 +204,11 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
             } catch (IOException ex) {
                 throw new RuntimeException(ex);
             }
+            requestFocusInWindow();
+            repaint();
         }
     }
+
 
     @Override
     public void keyReleased(KeyEvent e) {

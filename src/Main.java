@@ -18,18 +18,16 @@ public class Main {
         frame.add(panel);
 
         // Remove window borders and title bar
-        frame.setUndecorated(true);
+        //frame.setUndecorated(true);
 
         // Get the default screen device
         GraphicsDevice device = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
 
         // Set the frame to full-screen mode
-        device.setFullScreenWindow(frame);
+        //device.setFullScreenWindow(frame);
 
         frame.setVisible(true);
 
-        // call setVisible after everything else
         frame.setVisible(true);
-
     }
 }
