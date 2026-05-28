@@ -12,25 +12,36 @@ import javax.swing.JScrollPane;
 
 
 public class DisplayWindow extends JPanel implements MouseListener, KeyListener, ActionListener {
-    private static double accuracy = 0.0; //yes this works correctly i checked it goes to #.##
-    private BufferedImage background;
-    private boolean[] pressedKeys;
-    private Timer timer;
-    private boolean gameOver;
-    private PlaySong currentSong;
-    private JButton stopButton;
-    private JButton resumeButton;
-    private JButton startButton;
-    private JButton settingsButton;
-    private JFrame parentFrame;
-    private boolean visible = false;
-    private int screen;
-    private JButton playButton;
-    private JButton returnButton;
-    private JButton exitButton;
+    private static final double accuracy = 0.0; //yes this works correctly i checked it goes to #.##
 
-    private JPanel songSelect;
-    private JScrollPane songSelectWindow;
+    private final boolean[] pressedKeys;
+    private boolean visible = false;
+    private final boolean gameOver;
+
+    private int screen;
+
+    private final Timer timer;
+
+    private final PlaySong currentSong;
+
+    private BufferedImage background;
+
+    private final JButton resumeButton;
+    private final JButton startButton;
+    private final JButton settingsButton;
+    private final JButton stopButton;
+    private final JButton playButton;
+    private final JButton returnButton;
+    private final JButton exitButton;
+
+    private final JLabel volume;
+    private final JSlider volumeSlider;
+
+    private final JFrame parentFrame;
+
+    private final JPanel songSelect = new JPanel();
+
+    private final JScrollPane songSelectWindow = new JScrollPane(songSelect);
 
     private int perfectCount;
     private int greatCount;
@@ -38,7 +49,9 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     private int badCount;
     private int missCount;
     private int combo;
-    private int score;
+    private final int score;
+
+    private static final ArrayList<Song> songs = new ArrayList<>();
 
     public DisplayWindow(PlaySong currentSong, JFrame frame) {
         this.parentFrame = frame;
@@ -58,7 +71,14 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         settingsButton.addActionListener(e -> screen = 3); //dawg IDK make it go to settings page ig
         exitButton = new JButton("Exit game");
         exitButton.addActionListener(e->System.exit(0));
+        volumeSlider = new JSlider(0, 100, 50);
+        volume = new JLabel("Volume: 50%");
+        volumeSlider.addChangeListener(e -> {
+            int value = volumeSlider.getValue();
+            volume.setText("Volume: " + value + "%");
+            float volumeFloat = value / 100f;
 
+        });
         gameOver = false;
         score = 0;
         screen = 0;
@@ -75,14 +95,19 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         add(playButton);
         add(settingsButton);
         add(returnButton);
+        add(songSelectWindow);
         add(stopButton);
         add(startButton);
         add(resumeButton);
+        add(volumeSlider);
+        add(volume);
 
         stopButton.setVisible(visible);
         resumeButton.setVisible(visible);
         startButton.setVisible(visible);
         returnButton.setVisible(visible);
+        volumeSlider.setVisible(visible);
+        volume.setVisible(visible);
 
 
         addMouseListener(this);
@@ -141,7 +166,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
                 throw new RuntimeException(e);
             }
             //songSelect.set
-
+            songSelectWindow.createVerticalScrollBar();
         }
 
         if (screen == 2) { //actual game
@@ -155,6 +180,8 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
                 returnButton.setVisible(true);
                 playButton.setVisible(false);
                 settingsButton.setVisible(false);
+                volumeSlider.setVisible(true);
+                volume.setVisible(true);
                 background = ImageIO.read(new File("src/pictures/astolfo.jpg"));
                 g.drawImage(background, 0, 0, null);
             } catch (IOException e) {
@@ -192,6 +219,8 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
             resumeButton.setVisible(visible);
             startButton.setVisible(visible);
             returnButton.setVisible(visible);
+            volumeSlider.setVisible(visible);
+            volume.setVisible(visible);
 
             requestFocusInWindow();
             revalidate();
