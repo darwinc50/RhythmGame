@@ -5,7 +5,10 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.awt.GraphicsEnvironment;
+import java.awt.GraphicsDevice;
 import java.util.ArrayList;
+import javax.swing.JScrollPane;
 
 
 public class DisplayWindow extends JPanel implements MouseListener, KeyListener, ActionListener {
@@ -156,6 +159,20 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
                 playButton.setVisible(false);
                 settingsButton.setVisible(false);
                 returnButton.setVisible(true);
+                songSelect = new JPanel();
+                // String[] songList = {"take a hint", "dangerous woman"};
+                songSelect.setLayout(new BoxLayout(songSelect, BoxLayout.Y_AXIS));
+                for (int i = 0; i < 500; i++) {
+                    JLabel song = new JLabel("Label" + i);
+                    songSelect.add(song);
+                }
+                songSelect.revalidate();
+                songSelectWindow = new JScrollPane(songSelect);
+                songSelectWindow.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+                songSelectWindow.setPreferredSize(new Dimension(300, 1080));
+                add(songSelectWindow);
+                repaint();
+                songSelectWindow.setVisible(true);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
