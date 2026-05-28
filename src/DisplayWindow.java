@@ -29,8 +29,8 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     private JButton returnButton;
     private JButton exitButton;
 
-    private JPanel songSelect = new JPanel();
-    private JScrollPane songSelectWindow = new JScrollPane(songSelect);
+    private JPanel songSelect;
+    private JScrollPane songSelectWindow;
 
     private int perfectCount;
     private int greatCount;
@@ -75,7 +75,6 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         add(playButton);
         add(settingsButton);
         add(returnButton);
-        add(songSelectWindow);
         add(stopButton);
         add(startButton);
         add(resumeButton);
@@ -124,11 +123,25 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
                 playButton.setVisible(false);
                 settingsButton.setVisible(false);
                 returnButton.setVisible(true);
+                songSelect = new JPanel();
+                // String[] songList = {"take a hint", "dangerous woman"};
+                songSelect.setLayout(new BoxLayout(songSelect, BoxLayout.Y_AXIS));
+                for (int i = 0; i < 500; i++) {
+                    JLabel song = new JLabel("Label" + i);
+                    songSelect.add(song);
+                }
+                songSelect.revalidate();
+                songSelectWindow = new JScrollPane(songSelect);
+                songSelectWindow.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+                songSelectWindow.setPreferredSize(new Dimension(300, 1080));
+                add(songSelectWindow);
+                repaint();
+                songSelectWindow.setVisible(true);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
             //songSelect.set
-            songSelectWindow.createVerticalScrollBar();
+
         }
 
         if (screen == 2) { //actual game
