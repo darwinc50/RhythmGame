@@ -125,6 +125,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         requestFocusInWindow();
         timer.start();
     }
+
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -173,7 +174,6 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            //songSelect.set
             songSelectWindow.createVerticalScrollBar();
         }
 
@@ -272,9 +272,9 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
 
     @Override
     public void actionPerformed(ActionEvent e) {
-
         repaint();
     }
+
     @Override
     public void mouseClicked(MouseEvent e) { } // unimplemented
     // unimplemented because if you move your mouse while clicking, this method isn't

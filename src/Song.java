@@ -19,7 +19,7 @@ public class Song {
         this.name = n;
     }
 
-    public static void main(String[] args) {
+    public static void grabSongs() {
         try (Stream<Path> paths = Files.walk(Paths.get("src/songs"))) {
             paths.filter(Files::isRegularFile).forEach(path -> {
                         // Process each file
