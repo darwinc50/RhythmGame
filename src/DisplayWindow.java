@@ -31,6 +31,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     private final JButton returnButton;
     private final JButton exitButton;
 
+    private final JLabel volume;
     private final JSlider volumeSlider;
 
     private final JFrame parentFrame;
@@ -67,9 +68,13 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         settingsButton.addActionListener(e -> screen = 3); //dawg IDK make it go to settings page ig
         exitButton = new JButton("Exit game");
         exitButton.addActionListener(e->System.exit(0));
-        volumeSlider = new JSlider(0,100,50);
+        volumeSlider = new JSlider(0, 100, 50);
+        volume = new JLabel("Volume: 50%");
         volumeSlider.addChangeListener(e -> {
-            float volume = volumeSlider.getValue() / 100f;
+            int value = volumeSlider.getValue();
+            volume.setText("Volume: " + value + "%");
+            float volumeFloat = value / 100f;
+
         });
         gameOver = false;
         score = 0;
@@ -92,11 +97,14 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         add(startButton);
         add(resumeButton);
         add(volumeSlider);
+        add(volume);
 
         stopButton.setVisible(visible);
         resumeButton.setVisible(visible);
         startButton.setVisible(visible);
         returnButton.setVisible(visible);
+        volumeSlider.setVisible(visible);
+        volume.setVisible(visible);
 
 
         addMouseListener(this);
@@ -155,6 +163,8 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
                 returnButton.setVisible(true);
                 playButton.setVisible(false);
                 settingsButton.setVisible(false);
+                volumeSlider.setVisible(true);
+                volume.setVisible(true);
                 background = ImageIO.read(new File("src/pictures/astolfo.jpg"));
                 g.drawImage(background, 0, 0, null);
             } catch (IOException e) {
@@ -192,6 +202,8 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
             resumeButton.setVisible(visible);
             startButton.setVisible(visible);
             returnButton.setVisible(visible);
+            volumeSlider.setVisible(visible);
+            volume.setVisible(visible);
 
             requestFocusInWindow();
             revalidate();
