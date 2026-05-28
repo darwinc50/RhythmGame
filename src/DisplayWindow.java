@@ -39,9 +39,9 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
 
     private final JFrame parentFrame;
 
-    private final JPanel songSelect = new JPanel();
+    private JPanel songSelect = new JPanel();
 
-    private final JScrollPane songSelectWindow = new JScrollPane(songSelect);
+    private JScrollPane songSelectWindow = new JScrollPane(songSelect);
 
     private int perfectCount;
     private int greatCount;
