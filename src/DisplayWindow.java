@@ -5,10 +5,7 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.awt.GraphicsEnvironment;
-import java.awt.GraphicsDevice;
 import java.util.ArrayList;
-import javax.swing.JScrollPane;
 
 
 public class DisplayWindow extends JPanel implements MouseListener, KeyListener, ActionListener {
@@ -17,6 +14,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     private final boolean[] pressedKeys;
     private boolean visible = false;
     private final boolean gameOver;
+    private final boolean isBGBlack;
 
     private int screen;
 
@@ -33,7 +31,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     private final JButton playButton;
     private final JButton returnButton;
     private final JButton exitButton;
-
+    private final JButton blackBG;
     private final JLabel volume;
     private final JSlider volumeSlider;
 
@@ -56,6 +54,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     public DisplayWindow(PlaySong currentSong, JFrame frame) {
         this.parentFrame = frame;
         this.currentSong = currentSong;
+        isBGBlack = false;
 
         startButton = new JButton("Start Music");
         startButton.addActionListener(e -> currentSong.playSound());
@@ -77,7 +76,16 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
             int value = volumeSlider.getValue();
             volume.setText("Volume: " + value + "%");
             float volumeFloat = value / 100f;
-
+        });
+        blackBG = new JButton("Remove Background");
+        blackBG.addActionListener(e-> {
+            if (isBGBlack == false){
+                try {
+                    background = ImageIO.read(new File("src/pictures/black.jpg"));
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
         });
         gameOver = false;
         score = 0;
@@ -101,6 +109,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         add(resumeButton);
         add(volumeSlider);
         add(volume);
+        add(blackBG);
 
         stopButton.setVisible(visible);
         resumeButton.setVisible(visible);
@@ -108,7 +117,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         returnButton.setVisible(visible);
         volumeSlider.setVisible(visible);
         volume.setVisible(visible);
-
+        blackBG.setVisible(visible);
 
         addMouseListener(this);
         addKeyListener(this);
@@ -116,7 +125,6 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         requestFocusInWindow();
         timer.start();
     }
-
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -212,15 +220,15 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         }
 
         if (keyCode == KeyEvent.VK_ESCAPE) {
-            System.out.println("escape");
-
             visible = !visible;
+
             stopButton.setVisible(visible);
             resumeButton.setVisible(visible);
             startButton.setVisible(visible);
             returnButton.setVisible(visible);
             volumeSlider.setVisible(visible);
             volume.setVisible(visible);
+            blackBG.setVisible(visible);
 
             requestFocusInWindow();
             revalidate();
