@@ -1,6 +1,5 @@
 import java.io.File;
 import java.io.IOException;
-import java.nio.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -8,12 +7,12 @@ import java.util.stream.Stream;
 
 public class Song {
 
-    private double starRating;
-    private File song;
-    private int length;
-    private String name;
+    private final double starRating;
+    private final File song;
+    private final long length;
+    private final String name;
 
-    public Song(double sR, File s, int l, String n) {
+    public Song(double sR, File s, long l, String n) {
         starRating = sR;
         song = s;
         length = l;
