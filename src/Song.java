@@ -1,12 +1,10 @@
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Scanner;
 import java.util.stream.Stream;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
@@ -24,13 +22,11 @@ public class Song {
 
     public Song(double sR, File s, String n) throws UnsupportedAudioFileException, IOException {
         this.starRating = sR;
-        // This will crash if 's' is a .txt file instead of a valid audio file (.wav)
         AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(s);
         this.format = audioInputStream.getFormat();
         this.song = s;
         this.length = audioInputStream.getFrameLength();
         this.name = n;
-        audioInputStream.close(); // Good practice to close stream
     }
 
     public static void grabSongs() {
@@ -80,35 +76,17 @@ public class Song {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        // Output results
-        System.out.println("\n--- Loaded Songs (" + songs.size() + ") ---");
         for (Song track : songs) {
             System.out.println("Title: " + track.name + " | " + track.getLength());
         }
     }
 
-
-    public static ArrayList<String> getFileData(String fileName) {
-        ArrayList<String> fileData = new ArrayList<String>();
-        try {
-            File f = new File(fileName);
-            Scanner s = new Scanner(f);
-            while (s.hasNextLine()) {
-                String line = s.nextLine();
-                if (!line.equals(""))
-                    fileData.add(line);
-            }
-            s.close();
-            return fileData;
-        }
-        catch (FileNotFoundException e) {
-            return fileData;
-        }
-    }
-
     public String getLength() {
-        double durationInSeconds =(length / format.getFrameRate());
-        return ("Duration: " + durationInSeconds + " seconds");
+        double durationInSeconds = (length / format.getFrameRate());
+
+        int minutes = (int) (durationInSeconds / 60);
+        int seconds = (int) (durationInSeconds % 60);
+
+        return String.format("Duration: %d:%02d", minutes, seconds);
     }
 }
