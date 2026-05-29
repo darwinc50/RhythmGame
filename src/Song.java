@@ -18,7 +18,7 @@ public class Song {
     private final long length;
     private final String name;
     private final AudioFormat format;
-    private static ArrayList<Song> songs = new ArrayList<>();
+    private static final ArrayList<Song> songs = new ArrayList<>();
 
     public Song(double sR, File s, String n) throws UnsupportedAudioFileException, IOException {
         this.starRating = sR;
