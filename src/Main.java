@@ -13,9 +13,8 @@ public class Main {
         //PlaySong takeAHint = new PlaySong(new File("src/songs/takeahint.wav"));
         // create a DisplayPanel object
         DisplayWindow panel = new DisplayWindow(dangerousWoman,frame);
-
         frame.add(panel);
-
         frame.setVisible(true);
+
     }
 }
