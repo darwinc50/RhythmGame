@@ -33,8 +33,7 @@ public class Song {
         audioInputStream.close(); // Good practice to close stream
     }
 
-    public static void main (String[] args) {
-
+    public static void grabSongs() {
 
         try (Stream<Path> paths = Files.walk(Paths.get("src/songs"))) {
             paths.filter(Files::isRegularFile).filter(path -> {
@@ -59,11 +58,7 @@ public class Song {
 
                     // FIX: Scan the subfolder to find any file ending with .wav
                     try (Stream<Path> subFiles = Files.list(subfolderPath)) {
-                        Path wavPath = subFiles
-                                .filter(f -> f.toString().toLowerCase().endsWith(".wav"))
-                                .findFirst()
-                                .orElse(null);
-
+                        Path wavPath = subFiles.filter(f -> f.toString().toLowerCase().endsWith(".wav")).findFirst().orElse(null);
                         if (wavPath != null) {
                             audioFile = wavPath.toFile();
                         }
@@ -104,7 +99,7 @@ public class Song {
                 if (!line.equals(""))
                     fileData.add(line);
             }
-            s.close(); // Good practice to close scanner
+            s.close();
             return fileData;
         }
         catch (FileNotFoundException e) {

@@ -15,6 +15,6 @@ public class Main {
         DisplayWindow panel = new DisplayWindow(dangerousWoman,frame);
         frame.add(panel);
         frame.setVisible(true);
-
+        Song.grabSongs();
     }
 }
