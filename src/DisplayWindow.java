@@ -14,7 +14,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     private final boolean[] pressedKeys;
     private boolean visible = false;
     private final boolean gameOver;
-    private final boolean isBGBlack;
+    private boolean isBGBlack;
 
     private int screen;
 
@@ -23,6 +23,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     private final PlaySong currentSong;
 
     private BufferedImage background;
+    private BufferedImage transparentBG;
 
     private final JButton resumeButton;
     private final JButton startButton;
@@ -41,6 +42,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
 
     private JScrollPane songSelectWindow = new JScrollPane(songSelect);
 
+
     private int perfectCount;
     private int greatCount;
     private int goodCount;
@@ -55,7 +57,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         this.parentFrame = frame;
         this.currentSong = currentSong;
         isBGBlack = false;
-
+        transparentBG = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         startButton = new JButton("Start Music");
         startButton.addActionListener(e -> currentSong.playSound());
         stopButton = new JButton("Stop Music");
@@ -79,12 +81,15 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         });
         blackBG = new JButton("Remove Background");
         blackBG.addActionListener(e-> {
-            if (isBGBlack == false){
+            if (!isBGBlack){
                 try {
                     background = ImageIO.read(new File("src/pictures/black.jpg"));
+                    isBGBlack = true;
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
+            } else {
+                background = transparentBG;
             }
         });
         gameOver = false;
