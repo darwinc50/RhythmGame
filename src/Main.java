@@ -8,9 +8,9 @@ public class Main {
         frame.setIconImage(new ImageIcon("src/spinnin.png").getImage()); //change app icon image
         Song.grabSongs();
         ArrayList<Song> songs = Song.getSongs();
-//        for (Song track : songs) {
-//            System.out.println("Title: " + track.getName() + " | " + track.getLength());
-//        }
+        for (Song track : songs) {
+            System.out.println("Title: " + track.getName() + " | " + track.getLength());
+        }
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(1920, 1080);
         frame.setLocationRelativeTo(null);

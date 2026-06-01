@@ -29,10 +29,6 @@ public class Song {
         this.name = n;
     }
 
-    public static ArrayList<Song> getSongs() {
-        return songs;
-    }
-
     public static void grabSongs() {
 
         try (Stream<Path> paths = Files.walk(Paths.get("src/songs"))) {
@@ -80,6 +76,14 @@ public class Song {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static ArrayList<Song> getSongs() {
+        return songs;
+    }
+
+    public double getStarRating() {
+        return starRating;
     }
 
     public String getName() {

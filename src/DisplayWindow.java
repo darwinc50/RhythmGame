@@ -158,7 +158,6 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
                 settingsButton.setVisible(false);
                 returnButton.setVisible(true);
                 songSelect = new JPanel();
-                // String[] songList = {"take a hint", "dangerous woman"};
                 songSelect.setLayout(new BoxLayout(songSelect, BoxLayout.Y_AXIS));
                 for (int i = 0; i < 500; i++) {
                     JLabel song = new JLabel("Label" + i);
