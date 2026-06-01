@@ -9,7 +9,7 @@ import java.util.ArrayList;
 
 
 public class DisplayWindow extends JPanel implements MouseListener, KeyListener, ActionListener {
-    private static final double accuracy = 0.0; //yes this works correctly i checked it goes to #.##
+    private final double accuracy = 0.0; //yes this works correctly i checked it goes to #.##
 
     private final boolean[] pressedKeys;
     private boolean visible = false;
@@ -257,13 +257,6 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
             revalidate();
             repaint();
         }
-    }
-
-
-    @Override
-    public void keyReleased(KeyEvent e) {
-        int key = e.getKeyCode();
-        pressedKeys[key] = false;
     }
 
     private void drawScaledImage(BufferedImage img, Graphics g, double scaleFactor, int x, int y) {
