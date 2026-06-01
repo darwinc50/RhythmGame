@@ -56,6 +56,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         this.currentSong = currentSong;
         isBGBlack = false;
 
+        setLayout(new BorderLayout());
         startButton = new JButton("Start Music");
         startButton.addActionListener(e -> currentSong.playSound());
         stopButton = new JButton("Stop Music");
@@ -103,7 +104,6 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         add(playButton);
         add(settingsButton);
         add(returnButton);
-        add(songSelectWindow);
         add(stopButton);
         add(startButton);
         add(resumeButton);
@@ -153,10 +153,11 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         if (screen == 1) { //song select
             try {
                 background = ImageIO.read(new File("src/pictures/spinnin.png"));
-                drawScaledImage(background, g, 0.5, 50, 100);
+                // drawScaledImage(background, g, 0.5, 50, 100);
                 playButton.setVisible(false);
                 settingsButton.setVisible(false);
                 returnButton.setVisible(true);
+                exitButton.setVisible(true);
                 songSelect = new JPanel();
                 songSelect.setLayout(new BoxLayout(songSelect, BoxLayout.Y_AXIS));
                 for (int i = 0; i < 500; i++) {
@@ -164,12 +165,33 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
                     songSelect.add(song);
                 }
                 songSelect.revalidate();
+
+                JPanel leftWrapper = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+                songSelectWindow.setVisible(true);
                 songSelectWindow = new JScrollPane(songSelect);
                 songSelectWindow.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-                songSelectWindow.setPreferredSize(new Dimension(300, 1080));
-                add(songSelectWindow);
+                songSelectWindow.setPreferredSize(new Dimension(300, 500));
+                songSelectWindow.setLocation(0, 0);
+                add(songSelectWindow, BorderLayout.WEST);
+
+
+
+                leftWrapper.add(songSelectWindow);
+                add(leftWrapper, BorderLayout.WEST);
+
+                JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+                buttonPanel.setOpaque(false);
+
+                returnButton.setPreferredSize(new Dimension(200, 50));
+                exitButton.setPreferredSize(new Dimension(200, 50));
+
+                buttonPanel.add(returnButton);
+                buttonPanel.add(exitButton);
+                add(buttonPanel, BorderLayout.NORTH);
+
+                revalidate();
                 repaint();
-                songSelectWindow.setVisible(true);
+
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -197,6 +219,10 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         }
         // set font and color of text
         g.setFont(new Font("Arial", Font.BOLD, 16));
+    }
+
+    public void switchScreen(int screen) {
+
     }
 
     @Override
