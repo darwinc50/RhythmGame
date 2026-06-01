@@ -129,7 +129,6 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-
         if (screen == 0) { //home screen
             try {
                 background = ImageIO.read(new File("src/pictures/m2.png"));
@@ -153,7 +152,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         if (screen == 1) { //song select
             try {
                 background = ImageIO.read(new File("src/pictures/spinnin.png"));
-                drawScaledImage(background, g, 0.5, 50, 100);
+                // drawScaledImage(background, g, 0.5, 500, 100);
                 playButton.setVisible(false);
                 settingsButton.setVisible(false);
                 returnButton.setVisible(true);
@@ -163,11 +162,13 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
                     JLabel song = new JLabel("Label" + i);
                     songSelect.add(song);
                 }
+                setLayout(new BorderLayout());
+
                 songSelect.revalidate();
                 songSelectWindow = new JScrollPane(songSelect);
                 songSelectWindow.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-                songSelectWindow.setPreferredSize(new Dimension(300, 1080));
-                add(songSelectWindow);
+                songSelectWindow.setPreferredSize(new Dimension(300, 900));
+                add(songSelectWindow, BorderLayout.WEST);
                 repaint();
                 songSelectWindow.setVisible(true);
             } catch (IOException e) {
@@ -197,6 +198,11 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         }
         // set font and color of text
         g.setFont(new Font("Arial", Font.BOLD, 16));
+
+    }
+
+    public void switchScreen(int screen) {
+
     }
 
     @Override
