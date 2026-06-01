@@ -271,4 +271,3 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     @Override public void mouseExited(MouseEvent e) {}
     @Override public void keyTyped(KeyEvent e) {}
 }
-jjjjppppp

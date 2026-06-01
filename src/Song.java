@@ -78,6 +78,11 @@ public class Song {
         }
     }
 
+    @Override
+    public String toString() {
+        return (getName() + ", " + getLength());
+    }
+
     public static ArrayList<Song> getSongs() {
         return songs;
     }
