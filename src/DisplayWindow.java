@@ -5,297 +5,394 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-
+import java.util.HashSet;
+import java.util.Set;
 
 public class DisplayWindow extends JPanel implements MouseListener, KeyListener, ActionListener {
-    private final double accuracy = 0.0; //yes this works correctly i checked it goes to #.##
 
-    private final boolean[] pressedKeys;
-    private boolean visible = false;
-    private final boolean gameOver;
-    private boolean isBGBlack;
+    // -------------------------------------------------------------------------
+    // Screen state
+    // -------------------------------------------------------------------------
+    private enum Screen { HOME, SONG_SELECT, GAME, SETTINGS }
 
-    private int screen = -1;
+    private Screen screen;
 
-    private final Timer timer;
-
-    private final PlaySong currentSong;
-
-    private BufferedImage bgHome;
-    private BufferedImage bgSongSelect;
-    private BufferedImage bgSettings;
-    private BufferedImage currentBackground;
-
-    private final JButton resumeButton;
-    private final JButton startButton;
-    private final JButton settingsButton;
-    private final JButton stopButton;
-    private final JButton playButton;
-    private final JButton returnButton;
-    private final JButton exitButton;
-    private final JButton blackBG;
-    private final JLabel volume;
-    private final JSlider volumeSlider;
-
-    private final JFrame parentFrame;
-
-    private JPanel songSelect = new JPanel();
-
-    private JScrollPane songSelectWindow = new JScrollPane(songSelect);
-
-
+    // -------------------------------------------------------------------------
+    // Game stats (non-final so they can actually change during gameplay)
+    // -------------------------------------------------------------------------
+    private double accuracy = 0.0;
     private int perfectCount;
     private int greatCount;
     private int goodCount;
     private int badCount;
     private int missCount;
     private int combo;
-    private final int score;
+    private int score;
 
-    private static final ArrayList<Song> songs = new ArrayList<>();
+    // -------------------------------------------------------------------------
+    // Input tracking
+    // -------------------------------------------------------------------------
+    private final Set<Integer> pressedKeys = new HashSet<>();
+    private boolean pauseMenuVisible = false;
 
+    // -------------------------------------------------------------------------
+    // Background images (loaded once, not on every repaint)
+    // -------------------------------------------------------------------------
+    private BufferedImage bgHome;
+    private BufferedImage bgSongSelect;
+    private BufferedImage bgSettings;
+    private BufferedImage bgGame;
+    private BufferedImage currentBackground;
+
+    // -------------------------------------------------------------------------
+    // UI components
+    // -------------------------------------------------------------------------
+    private final JButton playButton;
+    private final JButton settingsButton;
+    private final JButton returnButton;
+    private final JButton exitButton;
+
+    // Pause-menu controls (shown/hidden via ESC)
+    private final JButton startButton;
+    private final JButton stopButton;
+    private final JButton resumeButton;
+    private final JSlider volumeSlider;
+    private final JLabel  volumeLabel;
+
+    // Song select panel
+    private final JScrollPane songSelectPane;
+
+    // -------------------------------------------------------------------------
+    // Dependencies
+    // -------------------------------------------------------------------------
+    private final PlaySong currentSong;
+    private final JFrame   parentFrame;
+    private final Timer    repaintTimer;
+
+    // -------------------------------------------------------------------------
+    // Constructor
+    // -------------------------------------------------------------------------
     public DisplayWindow(PlaySong currentSong, JFrame frame) {
-        this.parentFrame = frame;
         this.currentSong = currentSong;
-        this.gameOver = false;
-        this.isBGBlack = false;
+        this.parentFrame = frame;
 
-        try {
-            bgHome = ImageIO.read(new File("src/pictures/m2.png"));
-            bgSongSelect = ImageIO.read(new File("src/pictures/spinnin.png"));
-            bgSettings = ImageIO.read(new File("src/pictures/astolfo.jpg"));
-            currentBackground = bgHome;
-        } catch (IOException e) {
-            System.out.println("Image loading error: " + e.getMessage());
-        }
+        loadImages();
 
-        startButton = new JButton("Start Music");
-        startButton.addActionListener(e -> currentSong.playSound());
+        // --- Main nav buttons ---
+        playButton = makeButton("PLAY", e -> transitionTo(Screen.SONG_SELECT));
+        settingsButton = makeButton("Settings", e -> transitionTo(Screen.SETTINGS));
+        returnButton = makeButton("Return To Home", e -> transitionTo(Screen.HOME));
+        exitButton = makeButton("Exit Game", e -> System.exit(0));
 
-        stopButton = new JButton("Stop Music");
-        stopButton.addActionListener(e -> currentSong.stopSound());
+        // --- Pause menu buttons ---
+        startButton  = makeButton("Start Music",  e -> currentSong.playSound());
+        stopButton   = makeButton("Stop Music",   e -> currentSong.stopSound());
+        resumeButton = makeButton("Resume Music", e -> currentSong.resumeSound());
 
-        resumeButton = new JButton("Resume Music");
-        resumeButton.addActionListener(e -> currentSong.resumeSound());
 
-        returnButton = new JButton("Return To Home Page");
-        returnButton.addActionListener(e -> screen = 0);
-
-        playButton = new JButton("PLAY");
-        playButton.addActionListener(e -> screen = 1);
-
-        settingsButton = new JButton("Settings");
-        settingsButton.addActionListener(e -> screen = 3); //dawg IDK make it go to settings page ig
-
-        exitButton = new JButton("Exit game");
-        exitButton.addActionListener(e->System.exit(0));
-
+        // --- Volume slider ---
         volumeSlider = new JSlider(0, 100, 50);
-        volume = new JLabel("Volume: 50%");
+        volumeLabel  = new JLabel("Volume: 50%");
         volumeSlider.addChangeListener(e -> {
-            int value = volumeSlider.getValue();
-            volume.setText("Volume: " + value + "%");
-            float volumeFloat = value / 100f;
+            int val = volumeSlider.getValue();
+            volumeLabel.setText("Volume: " + val + "%");
+            float gain = val / 100f;
+//            currentSong.setVolume(gain); // wire up when PlaySong supports it
         });
 
-        blackBG = new JButton("Remove Background");
-        blackBG.addActionListener(e -> {
-            try {
-                currentBackground = ImageIO.read(new File("src/pictures/black.jpg"));
-                repaint();
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            }
-        });
+        // --- Song select scroll pane ---
+        JPanel songListPanel = buildSongListPanel();
+        songSelectPane = new JScrollPane(songListPanel);
+        songSelectPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        songSelectPane.setPreferredSize(new Dimension(300, 900));
 
-        score = 0;
-        screen = 0;
-        timer = new Timer(10, this);
-        pressedKeys = new boolean[128]; // 128 keys on keyboard, max keycode is 127
-
-        try {
-            currentBackground = ImageIO.read(new File("src/pictures/anothermooda.jpg")); //change background
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-
+        // Add everything; visibility is managed by transitionTo()
+        setLayout(null); // absolute layout so we can position manually
         add(exitButton);
         add(playButton);
         add(settingsButton);
         add(returnButton);
-        add(songSelectWindow);
-        add(stopButton);
         add(startButton);
+        add(stopButton);
         add(resumeButton);
         add(volumeSlider);
-        add(volume);
-        add(blackBG);
-
-        stopButton.setVisible(visible);
-        resumeButton.setVisible(visible);
-        startButton.setVisible(visible);
-        returnButton.setVisible(visible);
-        volumeSlider.setVisible(visible);
-        volume.setVisible(visible);
-        blackBG.setVisible(visible);
+        add(volumeLabel);
+        add(songSelectPane);
 
         addMouseListener(this);
         addKeyListener(this);
         setFocusable(true);
         requestFocusInWindow();
-        timer.start();
-    }
 
-    @Override
-    public void paintComponent(Graphics g) {
-        super.paintComponent(g);
+        repaintTimer = new Timer(16, this); // ~60 fps
+        repaintTimer.start();
 
-        if (screen == 0) { //home screen
-            try {
-                currentBackground = ImageIO.read(new File("src/pictures/m2.png"));
-                g.drawImage(currentBackground, 0, 0, null);
-                returnButton.setVisible(false);
-                g.drawString("very good game", 1980/2, 100);
-                g.setFont(new Font("Cosmic Sans MS", Font.PLAIN,100));
-                playButton.setSize(500, 200);
-                playButton.setLocation(1980/2 - 250,1080/2-300); // wow we centered a button apple hire us please
-                playButton.setVisible(screen == 0);
-                settingsButton.setVisible(screen == 0);
-                settingsButton.setSize(500,200);
-                settingsButton.setLocation(1980/2 -250,1080/2);
-                settingsButton.setVisible(true);
-
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        if (screen == 1) { //song select
-            try {
-                currentBackground = ImageIO.read(new File("src/pictures/spinnin.png"));
-                drawScaledImage(currentBackground, g, 0.5, 50, 100);
-                playButton.setVisible(false);
-                settingsButton.setVisible(false);
-                returnButton.setVisible(true);
-                songSelect = new JPanel();
-                songSelect.setLayout(new BoxLayout(songSelect, BoxLayout.Y_AXIS));
-                for (int i = 0; i < Song.getSongs().size(); i++) {
-                    JLabel song = new JLabel("Song: " + Song.getSongs().get(i));
-                    songSelect.add(song);
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                // Only run once — remove self after first valid size
+                if (getWidth() > 0 && getHeight() > 0) {
+                    removeComponentListener(this);
+                    transitionTo(Screen.HOME);
                 }
-                setLayout(new BorderLayout());
-
-                songSelect.revalidate();
-                songSelectWindow = new JScrollPane(songSelect);
-                songSelectWindow.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-                songSelectWindow.setPreferredSize(new Dimension(300, 900));
-                add(songSelectWindow, BorderLayout.WEST);
-                repaint();
-                songSelectWindow.setVisible(true);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
             }
-            songSelectWindow.createVerticalScrollBar();
-        }
-
-        if (screen == 2) { //actual game
-            playButton.setVisible(false);
-            settingsButton.setVisible(false);
-            g.drawString("Accuracy: " + Math.round(accuracy * 100.0) / 100.0, 50, 30);
-        }
-
-        if (screen == 3){ //settings
-            try {
-                returnButton.setVisible(true);
-                playButton.setVisible(false);
-                settingsButton.setVisible(false);
-                volumeSlider.setVisible(true);
-                volume.setVisible(true);
-                currentBackground = ImageIO.read(new File("src/pictures/astolfo.jpg"));
-                g.drawImage(currentBackground, 0, 0, null);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        // set font and color of text
-        g.setFont(new Font("Arial", Font.BOLD, 16));
+        });// set initial state properly
     }
 
+    // -------------------------------------------------------------------------
+    // Screen transitions — ONE place that owns button visibility & background
+    // -------------------------------------------------------------------------
+    private void transitionTo(Screen next) {
+        screen = next;
+        pauseMenuVisible = false; // reset pause overlay on any nav
+
+        // Hide everything first, then show what's needed
+        setAllVisible(false);
+
+        switch (screen) {
+            case HOME -> {
+                exitButton.setVisible(true);
+                currentBackground = bgHome;
+                playButton.setVisible(true);
+                settingsButton.setVisible(true);
+                positionButton(playButton,     centerX(500), centerY(200) - 220, 500, 200);
+                positionButton(settingsButton, centerX(500), centerY(200),       500, 200);
+                positionButton(exitButton,     centerX(200), centerY(60)  + 160, 200,  60);
+            }
+            case SONG_SELECT -> {
+                currentBackground = bgSongSelect;
+//                returnButton.setVisible(true);
+                songSelectPane.setVisible(true);
+                positionButton(returnButton, 20, 20, 180, 40);
+                songSelectPane.setBounds(20, 70, 300, 900);
+            }
+            case GAME -> {
+                currentBackground = null;
+                // game UI set up here as needed
+            }
+            case SETTINGS -> {
+                currentBackground = bgSettings;
+                returnButton.setVisible(true);
+                volumeSlider.setVisible(true);
+                volumeLabel.setVisible(true);
+                positionButton(returnButton,   20, 20,  180,  40);
+                volumeSlider.setBounds(centerX(300), 200, 300, 50);
+                volumeLabel.setBounds(centerX(200),  260, 200, 30);
+            }
+        }
+
+        revalidate();
+        repaint();
+    }
+
+    private void setPauseMenuVisible(boolean visible) {
+        pauseMenuVisible = visible;
+        startButton.setVisible(visible);
+        stopButton.setVisible(visible);
+        resumeButton.setVisible(visible);
+        returnButton.setVisible(visible);
+        if (visible) {
+            // Position pause buttons in the centre of the screen
+            positionButton(startButton,  centerX(180), centerY(40) - 70, 180, 40);
+            positionButton(stopButton,   centerX(180), centerY(40),      180, 40);
+            positionButton(resumeButton, centerX(180), centerY(40) + 70, 180, 40);
+        }
+        revalidate();
+        repaint();
+    }
+
+    // -------------------------------------------------------------------------
+    // Painting — ONLY drawing here, no file I/O, no component creation
+    // -------------------------------------------------------------------------
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2 = (Graphics2D) g;
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,     RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,    RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g2.setRenderingHint(RenderingHints.KEY_RENDERING,        RenderingHints.VALUE_RENDER_QUALITY);
+
+        // Draw background (black fallback if null)
+        if (currentBackground != null) {
+            g2.drawImage(currentBackground, 0, 0, getWidth(), getHeight(), null);
+        } else {
+            g2.setColor(Color.BLACK);
+            g2.fillRect(0, 0, getWidth(), getHeight());
+        }
+
+        switch (screen) {
+            case HOME -> drawHome(g2);
+            case SONG_SELECT -> drawSongSelect(g2);
+            case GAME -> drawGame(g2);
+            case SETTINGS -> drawSettings(g2);
+        }
+
+        if (pauseMenuVisible) drawPauseOverlay(g2);
+    }
+
+    private void drawHome(Graphics2D g) {
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Serif", Font.BOLD, 48));
+        drawCenteredString(g, "Very Good Game", getWidth() / 2, 100);
+    }
+
+    private void drawSongSelect(Graphics2D g) {
+        g.setColor(Color.WHITE);
+        Font font = new Font("Serif", Font.BOLD, 75);
+        g.setFont(font);
+
+        // Calculate the exact pixel width of the string
+        int stringWidth = g.getFontMetrics(font).stringWidth("Select a Song");
+
+        // Dynamically center the text on a 1920px wide screen
+        int x = (1920 - stringWidth) / 2;
+        int y = 100; // Keeps it at the top of the screen
+
+        g.drawString("Select a Song", x, y);
+    }
+
+    private void drawGame(Graphics2D g) {
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Arial", Font.BOLD, 20));
+        g.drawString("Accuracy: " + String.format("%.2f", accuracy) + "%", 50, 30);
+        g.drawString("Score: "    + score,                                    50, 55);
+        g.drawString("Combo: "    + combo,                                    50, 80);
+    }
+
+    private void drawSettings(Graphics2D g) {
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Serif", Font.BOLD, 36));
+        drawCenteredString(g, "Settings", getWidth() / 2, 100);
+    }
+
+    private void drawPauseOverlay(Graphics2D g) {
+        // Semi-transparent dark overlay
+        g.setColor(new Color(0, 0, 0, 160));
+        g.fillRect(0, 0, getWidth(), getHeight());
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Serif", Font.BOLD, 36));
+        drawCenteredString(g, "Paused", getWidth() / 2, 120);
+    }
+
+    // -------------------------------------------------------------------------
+    // Key handling
+    // -------------------------------------------------------------------------
     @Override
     public void keyPressed(KeyEvent e) {
-        int keyCode = e.getKeyCode();
-        pressedKeys[keyCode] = true;
+        int code = e.getKeyCode();
+        pressedKeys.add(code);
 
-        if (keyCode == KeyEvent.VK_F11) {
-            if (parentFrame.isUndecorated()) {
-                parentFrame.dispose();
-                parentFrame.setUndecorated(false);
-                parentFrame.setExtendedState(JFrame.NORMAL);
-                parentFrame.setVisible(true);
-            } else {
-                parentFrame.dispose();
-                parentFrame.setUndecorated(true);
-                parentFrame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-                parentFrame.setVisible(true);
-            }
-            requestFocusInWindow();
+        if (code == KeyEvent.VK_F11) {
+            toggleFullscreen();
         }
 
-        if (keyCode == KeyEvent.VK_ESCAPE) {
-            visible = !visible;
-
-            stopButton.setVisible(visible);
-            resumeButton.setVisible(visible);
-            startButton.setVisible(visible);
-            returnButton.setVisible(visible);
-            volumeSlider.setVisible(visible);
-            volume.setVisible(visible);
-            blackBG.setVisible(visible);
-
-            requestFocusInWindow();
-            revalidate();
-            repaint();
+        if (code == KeyEvent.VK_ESCAPE) {
+            setPauseMenuVisible(!pauseMenuVisible);
         }
-    }
-
-    private void drawScaledImage(BufferedImage img, Graphics g, double scaleFactor, int x, int y) {
-        if (img == null) return;
-
-        int originalWidth = img.getWidth();
-        int originalHeight = img.getHeight();
-        double aspectRatio = (double) originalWidth / originalHeight;
-
-        // Calculate maximum target bounds based on window size and scale factor
-        int targetWidth = (int) (getWidth() * scaleFactor);
-        int targetHeight = (int) (getHeight() * scaleFactor);
-
-        // Adjust dimensions to strictly preserve aspect ratio
-        if (targetWidth / (double) targetHeight > aspectRatio) {
-            targetWidth = (int) (targetHeight * aspectRatio);
-        } else {
-            targetHeight = (int) (targetWidth / aspectRatio);
-        }
-
-        // makes the image be higher quality rather than running fast
-        Graphics2D g2d = (Graphics2D) g;
-        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-
-        // Draw the image at the specified x and y coordinates
-        g2d.drawImage(img, x, y, targetWidth, targetHeight, null);
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
-        int key = e.getKeyCode();
-        pressedKeys[key] = false;
+        pressedKeys.remove(e.getKeyCode());
     }
-    @Override public void actionPerformed(ActionEvent e) {repaint();}
-    @Override public void mouseClicked(MouseEvent e) {}
-    @Override public void mousePressed(MouseEvent e) {}
+
+    private void toggleFullscreen() {
+        parentFrame.dispose();
+        parentFrame.setUndecorated(!parentFrame.isUndecorated());
+        parentFrame.setExtendedState(
+                parentFrame.isUndecorated() ? JFrame.MAXIMIZED_BOTH : JFrame.NORMAL
+        );
+        parentFrame.setVisible(true);
+        requestFocusInWindow();
+    }
+
+    // -------------------------------------------------------------------------
+    // Timer tick
+    // -------------------------------------------------------------------------
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        repaint();
+    }
+
+    // -------------------------------------------------------------------------
+    // Image loading — called once in constructor
+    // -------------------------------------------------------------------------
+    private void loadImages() {
+        bgHome      = loadImage("src/pictures/m2.png");
+        bgSongSelect = loadImage("src/pictures/spinnin.png");
+        bgSettings  = loadImage("src/pictures/astolfo.jpg");
+        bgGame      = loadImage("src/pictures/anothermooda.jpg");
+        currentBackground = bgHome;
+    }
+
+    private BufferedImage loadImage(String path) {
+        try {
+            return ImageIO.read(new File(path));
+        } catch (IOException e) {
+            System.err.println("Could not load image: " + path + " (" + e.getMessage() + ")");
+            return null;
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Song list panel — built once
+    // -------------------------------------------------------------------------
+    private JPanel buildSongListPanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        for (Song song : Song.getSongs()) {
+            JButton btn = new JButton(song.toString());
+            btn.addActionListener(e -> {
+                // TODO: load and start the selected song, then transitionTo(Screen.GAME)
+                transitionTo(Screen.GAME);
+            });
+            panel.add(btn);
+        }
+        return panel;
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+    private void setAllVisible(boolean v) {
+        playButton.setVisible(v);
+        settingsButton.setVisible(v);
+        returnButton.setVisible(v);
+        exitButton.setVisible(v);
+        startButton.setVisible(v);
+        stopButton.setVisible(v);
+        resumeButton.setVisible(v);
+        volumeSlider.setVisible(v);
+        volumeLabel.setVisible(v);
+        songSelectPane.setVisible(v);
+    }
+
+    private JButton makeButton(String label, ActionListener listener) {
+        JButton btn = new JButton(label);
+        btn.addActionListener(listener);
+        return btn;
+    }
+
+    private void positionButton(JButton btn, int x, int y, int w, int h) {
+        btn.setBounds(x, y, w, h);
+    }
+
+    private int centerX(int w) { return (getWidth()  - w) / 2; }
+    private int centerY(int h) { return (getHeight() - h) / 2; }
+
+    private void drawCenteredString(Graphics2D g, String text, int cx, int y) {
+        FontMetrics fm = g.getFontMetrics();
+        int x = cx - fm.stringWidth(text) / 2;
+        g.drawString(text, x, y);
+    }
+
+    // -------------------------------------------------------------------------
+    // Unused listener stubs
+    // -------------------------------------------------------------------------
+    @Override public void mouseClicked(MouseEvent e)  {}
+    @Override public void mousePressed(MouseEvent e)  {}
     @Override public void mouseReleased(MouseEvent e) {}
-    @Override public void mouseEntered(MouseEvent e) {}
-    @Override public void mouseExited(MouseEvent e) {}
-    @Override public void keyTyped(KeyEvent e) {}
+    @Override public void mouseEntered(MouseEvent e)  {}
+    @Override public void mouseExited(MouseEvent e)   {}
+    @Override public void keyTyped(KeyEvent e)        {}
 }
