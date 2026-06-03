@@ -15,9 +15,10 @@ public class Main {
         frame.setSize(1920, 1080);
         frame.setLocationRelativeTo(null);
         PlaySong dangerousWoman = new PlaySong(new File("src/songs/dangerouswoman.wav"));
-        //PlaySong takeAHint = new PlaySong(new File("src/songs/takeahint.wav"));
-        // create a DisplayPanel object
-        DisplayWindow panel = new DisplayWindow(dangerousWoman,frame);
+        PlaySong takeAHint = new PlaySong(new File("src/songs/takeahint.wav"));
+        PlaySong Funny = new PlaySong(new File("src/songs/Funny/Funny.wav"));
+
+        DisplayWindow panel = new DisplayWindow(Funny,frame);
         frame.add(panel);
         frame.setVisible(true);
     }
