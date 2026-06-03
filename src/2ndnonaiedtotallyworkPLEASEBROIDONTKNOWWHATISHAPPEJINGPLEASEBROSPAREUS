@@ -306,10 +306,10 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     // Image loading — called once in constructor
     // -------------------------------------------------------------------------
     private void loadImages() {
-        bgHome      = loadImage("src/pictures/m2.png");
-        bgSongSelect = loadImage("src/pictures/spinnin.png");
-        bgSettings  = loadImage("src/pictures/astolfo.jpg");
-        bgGame      = loadImage("src/pictures/anothermooda.jpg");
+        bgHome      = loadImage("src/background/m2.png");
+        bgSongSelect = loadImage("src/background/spinnin.png");
+        bgSettings  = loadImage("src/background/astolfo.jpg");
+        bgGame      = loadImage("src/background/anothermooda.jpg");
         currentBackground = bgHome;
     }
 

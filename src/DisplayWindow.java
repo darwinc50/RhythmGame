@@ -80,6 +80,47 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
 
         // --- Main nav buttons ---
         playButton = makeButton("PLAY", e -> transitionTo(Screen.SONG_SELECT));
+        playButton.setText(""); // Clears text so it doesn't render over your image file
+
+        // Load original play button image and compute shrunk sizes (90% scale)
+        ImageIcon originalPlayIcon = new ImageIcon("src/pictures/playButton.png");
+        int playTargetWidth = (int) (originalPlayIcon.getIconWidth() * 0.9);
+        int playTargetHeight = (int) (originalPlayIcon.getIconHeight() * 0.9);
+
+        // Generate the smooth scaled-down variant
+        java.awt.Image playScaledImg = originalPlayIcon.getImage().getScaledInstance(playTargetWidth, playTargetHeight, java.awt.Image.SCALE_SMOOTH);
+        ImageIcon shrunkPlayIcon = new ImageIcon(playScaledImg);
+
+        // Strip default background and borders
+        playButton.setIcon(originalPlayIcon);
+        playButton.setContentAreaFilled(false);
+        playButton.setBorderPainted(false);
+        playButton.setFocusPainted(false);
+
+        // Absolute position hover behavior (adjusts bounds to stay centered)
+        playButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            private java.awt.Rectangle originalBounds;
+
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent e) {
+                originalBounds = playButton.getBounds();
+                playButton.setIcon(shrunkPlayIcon);
+
+                // Calculate positional offsets so it shrinks inward toward the center
+                int dx = (originalBounds.width - playTargetWidth) / 2;
+                int dy = (originalBounds.height - playTargetHeight) / 2;
+                playButton.setBounds(originalBounds.x + dx, originalBounds.y + dy, playTargetWidth, playTargetHeight);
+            }
+
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent e) {
+                playButton.setIcon(originalPlayIcon);
+                if (originalBounds != null) {
+                    playButton.setBounds(originalBounds);
+                }
+            }
+        });
+
         settingsButton = makeButton("Settings", e -> transitionTo(Screen.SETTINGS));
         returnButton = makeButton("Return To Home", e -> transitionTo(Screen.HOME));
         exitButton = makeButton("Exit Game", e -> System.exit(0));
@@ -138,6 +179,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
             }
         });// set initial state properly
     }
+
 
     // -------------------------------------------------------------------------
     // Screen transitions — ONE place that owns button visibility & background
@@ -318,10 +360,10 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     // Image loading — called once in constructor
     // -------------------------------------------------------------------------
     private void loadImages() {
-        bgHome      = loadImage("src/pictures/m2.png");
-        bgSongSelect = loadImage("src/pictures/spinnin.png");
-        bgSettings  = loadImage("src/pictures/astolfo.jpg");
-        bgGame      = loadImage("src/pictures/anothermooda.jpg");
+        bgHome      = loadImage("src/background/m2.png");
+        bgSongSelect = loadImage("src/background/spinnin.png");
+        bgSettings  = loadImage("src/background/astolfo.jpg");
+        bgGame      = loadImage("src/background/anothermooda.jpg");
         currentBackground = bgHome;
     }
 

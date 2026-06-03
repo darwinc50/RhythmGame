@@ -50,9 +50,9 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
 
         // 1. Pre-load images once into memory to stop disk lag
         try {
-            bgHome = ImageIO.read(new File("src/pictures/m2.png"));
-            bgSongSelect = ImageIO.read(new File("src/pictures/spinnin.png"));
-            bgSettings = ImageIO.read(new File("src/pictures/astolfo.jpg"));
+            bgHome = ImageIO.read(new File("src/background/m2.png"));
+            bgSongSelect = ImageIO.read(new File("src/background/spinnin.png"));
+            bgSettings = ImageIO.read(new File("src/background/astolfo.jpg"));
             currentBackground = bgHome;
         } catch (IOException e) {
             System.out.println("Image loading error: " + e.getMessage());
@@ -88,7 +88,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         blackBG = new JButton("Remove Background");
         blackBG.addActionListener(e -> {
             try {
-                currentBackground = ImageIO.read(new File("src/pictures/black.jpg"));
+                currentBackground = ImageIO.read(new File("src/background/black.jpg"));
                 repaint();
             } catch (IOException ex) {
                 ex.printStackTrace();
