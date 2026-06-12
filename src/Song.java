@@ -1,3 +1,7 @@
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -6,10 +10,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.stream.Stream;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.UnsupportedAudioFileException;
 
 public class Song {
 
@@ -76,9 +76,23 @@ public class Song {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        for (Song track : songs) {
-            System.out.println("Title: " + track.name + " | " + track.getLength());
-        }
+    }
+
+    @Override
+    public String toString() {
+        return (getName() + ", " + getLength());
+    }
+
+    public static ArrayList<Song> getSongs() {
+        return songs;
+    }
+
+    public double getStarRating() {
+        return starRating;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public String getLength() {
