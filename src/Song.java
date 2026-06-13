@@ -60,6 +60,7 @@ public class Song {
                         }
                     }
 
+
                     // Check if we successfully found a WAV file
                     if (audioFile != null && audioFile.exists()) {
                         double mockRating = 5.0; // Place your star rating logic here
@@ -102,5 +103,9 @@ public class Song {
         int seconds = (int) (durationInSeconds % 60);
 
         return String.format("Duration: %d:%02d", minutes, seconds);
+    }
+
+    public File getSong() {
+        return song;
     }
 }

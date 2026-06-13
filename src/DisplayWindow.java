@@ -385,6 +385,8 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         for (Song song : Song.getSongs()) {
             JButton btn = new JButton(song.toString());
             btn.addActionListener(e -> {
+                PlaySong selectSong = new PlaySong(song.getSong());
+                selectSong.playSound();
                 // TODO: load and start the selected song, then transitionTo(Screen.GAME)
                 transitionTo(Screen.GAME);
             });
