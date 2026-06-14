@@ -38,4 +38,8 @@ public class PlaySong {
             clip.start();
         }
     }
+
+    public long getTime() {
+        return clip.getMicrosecondPosition();
+    }
 }

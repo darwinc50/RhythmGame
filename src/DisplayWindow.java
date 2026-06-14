@@ -1,12 +1,17 @@
+import javax.crypto.spec.PSource;
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.Timer;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class DisplayWindow extends JPanel implements MouseListener, KeyListener, ActionListener {
 
@@ -20,19 +25,25 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     // -------------------------------------------------------------------------
     // Game stats (non-final so they can actually change during gameplay)
     // -------------------------------------------------------------------------
-    private double accuracy = 0.0;
-    private int perfectCount;
     private int greatCount;
     private int goodCount;
     private int badCount;
     private int missCount;
     private int combo;
     private int score;
+    private int totalNotes;
+    private double accuracyTotal;
+    private double accuracy;
 
+    private static File currentChart;
+
+    private static ArrayList<Note> chartData = new ArrayList<>();
+
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     // -------------------------------------------------------------------------
     // Input tracking
     // -------------------------------------------------------------------------
-    private final Set<Integer> pressedKeys = new HashSet<>();
+    private ArrayList<Input> pressedKeys = new ArrayList<Input>();
     private boolean pauseMenuVisible = false;
 
     // -------------------------------------------------------------------------
@@ -65,15 +76,14 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     // -------------------------------------------------------------------------
     // Dependencies
     // -------------------------------------------------------------------------
-    private final PlaySong currentSong;
+    private static PlaySong currentSong;
     private final JFrame   parentFrame;
     private final Timer    repaintTimer;
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
-    public DisplayWindow(PlaySong currentSong, JFrame frame) {
-        this.currentSong = currentSong;
+    public DisplayWindow(JFrame frame) {
         this.parentFrame = frame;
 
         loadImages();
@@ -122,7 +132,12 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         });
 
         settingsButton = makeButton("Settings", e -> transitionTo(Screen.SETTINGS));
-        returnButton = makeButton("Return To Home", e -> transitionTo(Screen.HOME));
+        returnButton = makeButton("Return To Home", e -> {
+            transitionTo(Screen.HOME);
+            currentSong.stopSound();
+            currentSong = null;
+            currentChart = null;
+        });
         exitButton = makeButton("Exit Game", e -> System.exit(0));
 
         // --- Pause menu buttons ---
@@ -165,7 +180,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         setFocusable(true);
         requestFocusInWindow();
 
-        repaintTimer = new Timer(16, this); // ~60 fps
+        repaintTimer = new Timer(8, this); // ~60 fps
         repaintTimer.start();
 
         addComponentListener(new ComponentAdapter() {
@@ -265,7 +280,10 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         switch (screen) {
             case HOME -> drawHome(g2);
             case SONG_SELECT -> drawSongSelect(g2);
-            case GAME -> drawGame(g2);
+            case GAME -> {
+                drawGame(g2);
+                drawNotes(g2);
+            }
             case SETTINGS -> drawSettings(g2);
         }
 
@@ -296,10 +314,58 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     private void drawGame(Graphics2D g) {
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 20));
-        g.drawString("Accuracy: " + String.format("%.2f", accuracy) + "%", 50, 30);
-        g.drawString("Score: "    + score,                                    50, 55);
-        g.drawString("Combo: "    + combo,                                    50, 80);
+        g.drawString("Accuracy: " + String.format("%.2f", accuracyTotal / totalNotes) + "%", 50, 30);
+        g.drawString("Score: " + score,50, 55);
+        g.drawString("Combo: " + combo,50, 80);
+
+        g.drawOval(1920/2 - 350, 1080/2 - 350, 350,350);
+
     }
+
+    public void drawNotes(Graphics2D g) {
+        long currentTime = currentSong.getTime();
+        // System.out.println(currentTime);
+        for (Note note : chartData) {
+            Color note1 = Note.convert(Arrays.copyOfRange(note.getLanes(), 0, 3));
+            Color note2 = Note.convert(Arrays.copyOfRange(note.getLanes(), 3, 6));
+            if (note.getTime() - currentTime < 1000000 && note.getTime() - currentTime > 0) {
+                if (note1 != null) {
+                    g.setColor(note1);
+                    g.fillRect((int) ((currentTime - note.getTime())/1000) + (1920/2 - 350), 1080/2 - 225, 100, 100);
+                }
+                if (note2 != null) {
+                    g.setColor(note2);
+                    g.fillRect((int) ((note.getTime() - currentTime)/1000) + (1920/2 - 175), 1080/2 - 225, 100, 100);
+                }
+
+            }
+        }
+
+        /*
+        for (Note line: chartData) {
+            System.out.println(line);
+            System.out.println();
+        }
+        */
+    }
+
+    public void loadChart() {
+        try {
+            Scanner chartScan = new Scanner(currentChart);
+            while (chartScan.hasNextLine()) {
+                String[] data = chartScan.nextLine().split("/");
+                String[] stringLanes = data[0].split(",");
+                int[] lanes = new int[6];
+                for (int i = 0; i < 6; i++) {
+                    lanes[i] = Integer.parseInt(stringLanes[i]);
+                }
+                chartData.add(new Note(lanes, Long.parseLong(data[1])));
+            }
+        } catch (FileNotFoundException e) {
+            System.out.println("Chart not found");
+        }
+    }
+
 
     private void drawSettings(Graphics2D g) {
         g.setColor(Color.WHITE);
@@ -319,24 +385,6 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     // -------------------------------------------------------------------------
     // Key handling
     // -------------------------------------------------------------------------
-    @Override
-    public void keyPressed(KeyEvent e) {
-        int code = e.getKeyCode();
-        pressedKeys.add(code);
-
-        if (code == KeyEvent.VK_F11) {
-            toggleFullscreen();
-        }
-
-        if (code == KeyEvent.VK_ESCAPE) {
-            setPauseMenuVisible(!pauseMenuVisible);
-        }
-    }
-
-    @Override
-    public void keyReleased(KeyEvent e) {
-        pressedKeys.remove(e.getKeyCode());
-    }
 
     private void toggleFullscreen() {
         parentFrame.dispose();
@@ -385,10 +433,25 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         for (Song song : Song.getSongs()) {
             JButton btn = new JButton(song.toString());
             btn.addActionListener(e -> {
-                PlaySong selectSong = new PlaySong(song.getSong());
-                selectSong.playSound();
+                currentSong = new PlaySong(song.getSong());
+                currentSong.playSound();
+                currentChart = song.getChart();
+                loadChart();
                 // TODO: load and start the selected song, then transitionTo(Screen.GAME)
                 transitionTo(Screen.GAME);
+                scheduler.scheduleAtFixedRate(() -> {
+                    for (Note note : chartData) {
+                        long currentTime = currentSong.getTime();
+                        if (!note.isHit() && currentTime - note.getTime() > 70000) {
+                            note.setHit(true); // mark so it doesn't trigger again
+                            accuracyTotal += 0.0;    // miss penalty
+                            combo = 0;
+                            missCount++;
+                            totalNotes++;
+                            System.out.println("Miss!");
+                        }
+                    }
+                }, 0, 1, TimeUnit.MILLISECONDS);
             });
             panel.add(btn);
         }
@@ -438,5 +501,69 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     @Override public void mouseReleased(MouseEvent e) {}
     @Override public void mouseEntered(MouseEvent e)  {}
     @Override public void mouseExited(MouseEvent e)   {}
-    @Override public void keyTyped(KeyEvent e)        {}
+    @Override public void keyTyped(KeyEvent e) {}
+    @Override public void keyPressed(KeyEvent e)        {
+        int code = e.getKeyCode();
+        if (code == KeyEvent.VK_F11) {
+            toggleFullscreen();
+        }
+
+        if (code == KeyEvent.VK_ESCAPE) {
+            setPauseMenuVisible(!pauseMenuVisible);
+        }
+        long currentTime = currentSong.getTime();
+        ArrayList<Integer> codes = new ArrayList<>();
+        codes.add(code);
+        Input key = new Input(currentTime, codes);
+
+
+        if (!pressedKeys.isEmpty() && currentTime - pressedKeys.getLast().getTimePressed() < 30000) {
+            pressedKeys.getLast().addChordInput(code);
+            System.out.println("Added to chord: " + pressedKeys.getLast().getKeyCodes());
+        } else {
+            pressedKeys.add(key);
+            System.out.println("New input created: " + key.getKeyCodes());
+        }
+        if (!pressedKeys.isEmpty()) {
+            long diff = currentTime - pressedKeys.getLast().getTimePressed();
+            System.out.println("Time diff from last key: " + diff + " microseconds");
+        }
+        Input lastInput = pressedKeys.getLast();
+        scheduler.schedule(() -> {
+            if (lastInput.isChecked()) return; // ← skip if already evaluated
+            lastInput.setChecked(true);
+
+            int[] pressedCodes = Input.convert(lastInput.getKeyCodes());
+            for (Note note : chartData) {
+                if (currentTime - note.getTime() < 70000 && !note.isHit()) {
+                    System.out.println("Checking chord: " + Arrays.toString(pressedCodes));
+                    note.setHit(true);
+                    if (Arrays.equals(note.getLanes(), pressedCodes)) {
+                        combo++;
+                        totalNotes++;
+                        if (Math.abs(currentTime - note.getTime()) < 30000) {
+                            accuracyTotal += 99.0;
+                            score += combo * 500;
+                        } else if (Math.abs(currentTime - note.getTime()) < 60000) {
+                            accuracyTotal += 50.0;
+                            score += combo * 250;
+                        } else {
+                            accuracyTotal += 33.3;
+                            score += combo * 100;
+                        }
+                    } else {
+                        accuracyTotal += 10.0;
+                        combo = 0;
+                        totalNotes++;
+                        missCount++;
+                    }
+                    break;
+                }
+            }
+        }, 30, TimeUnit.MILLISECONDS);
+    }
+    @Override
+    public void keyReleased(KeyEvent e) {
+        // pressedKeys.removeIf(in -> e.getKeyCode() == in.getKeyCodes());
+    }
 }

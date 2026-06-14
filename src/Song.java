@@ -17,29 +17,23 @@ public class Song {
     private final File song;
     private final long length;
     private final String name;
+    private final File chart;
     private final AudioFormat format;
     private static final ArrayList<Song> songs = new ArrayList<>();
 
-    public Song(double sR, File s, String n) throws UnsupportedAudioFileException, IOException {
+    public Song(double sR, File s, String n, File chart) throws UnsupportedAudioFileException, IOException {
         this.starRating = sR;
         AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(s);
         this.format = audioInputStream.getFormat();
         this.song = s;
         this.length = audioInputStream.getFrameLength();
         this.name = n;
+        this.chart = chart;
     }
 
     public static void grabSongs() {
-
         try (Stream<Path> paths = Files.walk(Paths.get("src/songs"))) {
-            paths.filter(Files::isRegularFile).filter(path -> {
-                try {
-                    String type = Files.probeContentType(path);
-                    return type != null && type.startsWith("text/");
-                } catch (IOException e) {
-                    return false;
-                }
-            }).forEach(path -> {
+            paths.filter(Files::isRegularFile).filter(path -> path.getFileName().toString().equals("name.txt")).forEach(path -> {
                 try (BufferedReader reader = Files.newBufferedReader(path)) {
                     String title = reader.readLine();
                     if (title == null || title.trim().isEmpty()) {
@@ -60,11 +54,13 @@ public class Song {
                         }
                     }
 
+                    Path chartPath = subfolderPath.resolve("chart/mapdata.txt");
+                    File chart = chartPath.toFile();
 
                     // Check if we successfully found a WAV file
                     if (audioFile != null && audioFile.exists()) {
                         double mockRating = 5.0; // Place your star rating logic here
-                        Song newSong = new Song(mockRating, audioFile, title);
+                        Song newSong = new Song(mockRating, audioFile, title, chart);
                         songs.add(newSong);
                     } else {
                         System.err.println("No WAV file found inside folder: " + subfolderPath);
@@ -107,5 +103,9 @@ public class Song {
 
     public File getSong() {
         return song;
+    }
+
+    public File getChart() {
+        return chart;
     }
 }
