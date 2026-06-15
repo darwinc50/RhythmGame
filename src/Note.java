@@ -52,4 +52,14 @@ public class Note {
         }
         return null;
     }
+
+    public static Color judgementConvert(String judgement) {
+        return switch (judgement) {
+            case "Great!" -> Color.decode("#0ab6ff");
+            case "Good" -> Color.decode("#33c45f");
+            case "Bad" -> Color.decode("#c49d33");
+            case "Miss" -> Color.decode("#e32007");
+            default -> null;
+        };
+    }
 }

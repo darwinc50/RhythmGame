@@ -32,12 +32,13 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     private static int badCount;
     private static int missCount;
     private static int combo;
-    private static int score;
+    private static long score;
     private static int totalNotes;
     private static double accuracyTotal;
     private static double accuracy;
 
     private static String lastJudgement = "";
+    private static String lastJudgementOffset;
     private static long judgementTime;
 
     private static File currentChart;
@@ -47,6 +48,8 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     private static ArrayList<Note> chartData = new ArrayList<>();
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+    private boolean bot = false;
     // -------------------------------------------------------------------------
     // Input tracking
     // -------------------------------------------------------------------------
@@ -66,7 +69,6 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     // UI components
     // -------------------------------------------------------------------------
     private final JButton playButton;
-    private final JButton settingsButton;
     private final JButton returnButton;
     private final JButton exitButton;
 
@@ -74,8 +76,6 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     private final JButton startButton;
     private final JButton stopButton;
     private final JButton resumeButton;
-    private final JSlider volumeSlider;
-    private final JLabel  volumeLabel;
 
     // Song select panel
     private final JScrollPane songSelectPane;
@@ -97,48 +97,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
 
         // --- Main nav buttons ---
         playButton = makeButton("PLAY", e -> transitionTo(Screen.SONG_SELECT));
-        playButton.setText(""); // Clears text so it doesn't render over your image file
-
-        // Load original play button image and compute shrunk sizes (90% scale)
-        ImageIcon originalPlayIcon = new ImageIcon("src/pictures/playButton.png");
-        int playTargetWidth = (int) (originalPlayIcon.getIconWidth() * 0.9);
-        int playTargetHeight = (int) (originalPlayIcon.getIconHeight() * 0.9);
-
-        // Generate the smooth scaled-down variant
-        java.awt.Image playScaledImg = originalPlayIcon.getImage().getScaledInstance(playTargetWidth, playTargetHeight, java.awt.Image.SCALE_SMOOTH);
-        ImageIcon shrunkPlayIcon = new ImageIcon(playScaledImg);
-
-        // Strip default background and borders
-        playButton.setIcon(originalPlayIcon);
-        playButton.setContentAreaFilled(false);
-        playButton.setBorderPainted(false);
-        playButton.setFocusPainted(false);
-
-        // Absolute position hover behavior (adjusts bounds to stay centered)
-        playButton.addMouseListener(new java.awt.event.MouseAdapter() {
-            private java.awt.Rectangle originalBounds;
-
-            @Override
-            public void mouseEntered(java.awt.event.MouseEvent e) {
-                originalBounds = playButton.getBounds();
-                playButton.setIcon(shrunkPlayIcon);
-
-                // Calculate positional offsets so it shrinks inward toward the center
-                int dx = (originalBounds.width - playTargetWidth) / 2;
-                int dy = (originalBounds.height - playTargetHeight) / 2;
-                playButton.setBounds(originalBounds.x + dx, originalBounds.y + dy, playTargetWidth, playTargetHeight);
-            }
-
-            @Override
-            public void mouseExited(java.awt.event.MouseEvent e) {
-                playButton.setIcon(originalPlayIcon);
-                if (originalBounds != null) {
-                    playButton.setBounds(originalBounds);
-                }
-            }
-        });
-
-        settingsButton = makeButton("Settings", e -> transitionTo(Screen.SETTINGS));
+        playButton.setText("PLAY"); // Clears text so it doesn't render over your image file
         returnButton = makeButton("Return To Home", e -> {
             currentChart = null;
             chartData.clear();       // ← clear here too
@@ -162,33 +121,20 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         resumeButton = makeButton("Resume Music", e -> currentSong.resumeSound());
 
 
-        // --- Volume slider ---
-        volumeSlider = new JSlider(0, 100, 50);
-        volumeLabel  = new JLabel("Volume: 50%");
-        volumeSlider.addChangeListener(e -> {
-            int val = volumeSlider.getValue();
-            volumeLabel.setText("Volume: " + val + "%");
-            float gain = val / 100f;
-//            currentSong.setVolume(gain); // wire up when PlaySong supports it
-        });
-
         // --- Song select scroll pane ---
         JPanel songListPanel = buildSongListPanel();
         songSelectPane = new JScrollPane(songListPanel);
-        songSelectPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        // songSelectPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         songSelectPane.setPreferredSize(new Dimension(300, 900));
 
         // Add everything; visibility is managed by transitionTo()
         setLayout(null); // absolute layout so we can position manually
         add(exitButton);
         add(playButton);
-        add(settingsButton);
         add(returnButton);
         add(startButton);
         add(stopButton);
         add(resumeButton);
-        add(volumeSlider);
-        add(volumeLabel);
         add(songSelectPane);
 
         addMouseListener(this);
@@ -227,9 +173,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
                 exitButton.setVisible(true);
                 currentBackground = bgHome;
                 playButton.setVisible(true);
-                settingsButton.setVisible(true);
-                positionButton(playButton,     centerX(500), centerY(200) - 220, 500, 200);
-                positionButton(settingsButton, centerX(500), centerY(200),       500, 200);
+                positionButton(playButton,     centerX(500), centerY(200), 500, 200);
                 positionButton(exitButton,     centerX(200), centerY(60)  + 160, 200,  60);
             }
             case SONG_SELECT -> {
@@ -243,15 +187,6 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
                 currentBackground = null;
                 // game UI set up here as needed
             }
-            case SETTINGS -> {
-                currentBackground = bgSettings;
-                returnButton.setVisible(true);
-                volumeSlider.setVisible(true);
-                volumeLabel.setVisible(true);
-                positionButton(returnButton,   20, 20,  180,  40);
-                volumeSlider.setBounds(centerX(300), 200, 300, 50);
-                volumeLabel.setBounds(centerX(200),  260, 200, 30);
-            }
         }
 
         revalidate();
@@ -260,15 +195,20 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
 
     private void setPauseMenuVisible(boolean visible) {
         pauseMenuVisible = visible;
-        startButton.setVisible(visible);
-        stopButton.setVisible(visible);
-        resumeButton.setVisible(visible);
+        if (visible) {
+            currentSong.stopSound();
+        } else {
+            currentSong.resumeSound();
+        }
+        //startButton.setVisible(visible);
+        //stopButton.setVisible(visible);
+        //resumeButton.setVisible(visible);
         returnButton.setVisible(visible);
         if (visible) {
             // Position pause buttons in the centre of the screen
-            positionButton(startButton,  centerX(180), centerY(40) - 70, 180, 40);
-            positionButton(stopButton,   centerX(180), centerY(40),      180, 40);
-            positionButton(resumeButton, centerX(180), centerY(40) + 70, 180, 40);
+            // positionButton(startButton,  centerX(180), centerY(40) - 70, 180, 40);
+            positionButton(returnButton,   centerX(180), centerY(40),      180, 40);
+            // positionButton(resumeButton, centerX(180), centerY(40) + 70, 180, 40);
         }
         revalidate();
         repaint();
@@ -280,6 +220,8 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+        if (screen == null) return;
+
         Graphics2D g2 = (Graphics2D) g;
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,     RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,    RenderingHints.VALUE_INTERPOLATION_BILINEAR);
@@ -314,7 +256,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
 
     private void drawSongSelect(Graphics2D g) {
         g.setColor(Color.WHITE);
-        Font font = new Font("Serif", Font.BOLD, 75);
+        Font font = new Font("Arial", Font.BOLD, 75);
         g.setFont(font);
 
         // Calculate the exact pixel width of the string
@@ -329,17 +271,31 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
 
     private void drawGame(Graphics2D g) {
         g.setColor(Color.WHITE);
-        g.setFont(new Font("Arial", Font.BOLD, 20));
-        g.drawString("Accuracy: " + String.format("%.2f", accuracyTotal / totalNotes) + "%", 50, 30);
-        g.drawString("Score: " + score,50, 55);
-        g.drawString("Combo: " + combo,50, 80);
+        g.setFont(new Font("Arial", Font.BOLD, 40));
+        g.drawString(String.format("%.2f", accuracyTotal / totalNotes) + "%", 1920/2 - 50, 200);
+        g.setFont(new Font("Arial", Font.BOLD, 75));
+        g.setColor(Color.WHITE);
+        g.drawString(String.valueOf(score),10, 75);
+        g.setFont(new Font("Arial", Font.BOLD, 40));
+        g.setColor(Color.decode("#969692"));
+        g.drawString(combo + "x",10, 125);
+        g.setColor(Color.decode("#312a44"));
+
+        g.fillRect(0, 1080/2 - 245, 1980, 140);
+
+        g.setColor(Color.decode("#383a54"));
+        g.setColor(Note.judgementConvert(lastJudgement));
+        g.fillOval(1920/2 - 350, 1080/2 - 350, 350,350);
+
+        g.setColor(Color.decode("#242424"));
+        g.fillOval(1920/2 - 300, 1080/2 - 300, 250,250);
 
         g.drawOval(1920/2 - 350, 1080/2 - 350, 350,350);
 
 
         if (!lastJudgement.isEmpty() && currentSong != null) {
             long diff = currentSong.getTime() - judgementTime;
-            if (diff < 300000) {
+            if (diff < 200000) {
                 g.setFont(new Font("Arial", Font.BOLD, 40));
                 switch (lastJudgement) {
                     case "Miss" -> g.setColor(Color.decode("#e32007"));
@@ -347,7 +303,9 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
                     case "Good" -> g.setColor(Color.decode("#33c45f"));
                     case "Great!" -> g.setColor(Color.decode("#0ab6ff"));
                 }
-                g.drawString(lastJudgement, getWidth() / 2 - 100, getHeight() - 80);
+                g.drawString(lastJudgement, getWidth() / 2 - 30, getHeight() - 80);
+                g.setFont(new Font("Arial", Font.BOLD, 20));
+                // g.drawString(lastJudgementOffset, getWidth() / 2 - 30, getHeight() - 120);
             } else {
                 lastJudgement = "";
             }
@@ -361,16 +319,19 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         for (Note note : chartData) {
             Color note1 = Note.convert(Arrays.copyOfRange(note.getLanes(), 0, 3));
             Color note2 = Note.convert(Arrays.copyOfRange(note.getLanes(), 3, 6));
-            if (note.getTime() - currentTime < 1000000 && note.getTime() - currentTime > 0) {
+            if (note.getTime() - currentTime < 1000000 && currentTime - note.getTime() < 150000 && !note.isHit()) {
+                long offset = note.getTime() - currentTime;
+
                 if (note1 != null) {
                     g.setColor(note1);
-                    g.fillRect((int) ((currentTime - note.getTime())/1000) + (1920/2 - 350), 1080/2 - 225, 100, 100);
+                    int x = (1920/2 - 350) - (int)(offset / 1000) - 100; // ← subtract note width
+                    g.fillRect(x, 1080/2 - 225, 100, 100);
                 }
                 if (note2 != null) {
                     g.setColor(note2);
-                    g.fillRect((int) ((note.getTime() - currentTime)/1000) + (1920/2 - 175), 1080/2 - 225, 100, 100);
+                    int x = (1920/2) + (int)(offset / 1000);
+                    g.fillRect(x, 1080/2 - 225, 100, 100);
                 }
-
             }
         }
 
@@ -442,8 +403,8 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     // Image loading — called once in constructor
     // -------------------------------------------------------------------------
     private void loadImages() {
-        bgHome      = loadImage("src/background/m2.png");
-        bgSongSelect = loadImage("src/background/spinnin.png");
+        bgHome      = loadImage("src/background/home.jpg");
+        bgSongSelect = loadImage("src/background/rhythm_home.jpg");
         bgSettings  = loadImage("src/background/astolfo.jpg");
         bgGame      = loadImage("src/background/anothermooda.jpg");
         currentBackground = bgHome;
@@ -464,8 +425,33 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     private JPanel buildSongListPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(Color.BLACK);
         for (Song song : Song.getSongs()) {
             JButton btn = new JButton(song.toString());
+
+            // Styling
+            btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
+            btn.setFont(new Font("Arial", Font.BOLD, 16));
+            btn.setForeground(Color.WHITE);
+            btn.setBackground(new Color(40, 40, 60));
+            btn.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(80, 80, 120)),
+                    BorderFactory.createEmptyBorder(10, 15, 10, 15)
+            ));
+            btn.setFocusPainted(false);
+            btn.setContentAreaFilled(true);
+            btn.setOpaque(true);
+            btn.setAlignmentX(Component.LEFT_ALIGNMENT);
+            btn.setHorizontalAlignment(SwingConstants.LEFT);
+
+            // Hover effect
+            Color normal = new Color(40, 40, 60);
+            Color hover  = new Color(70, 70, 110);
+            btn.addMouseListener(new java.awt.event.MouseAdapter() {
+                public void mouseEntered(java.awt.event.MouseEvent e) { btn.setBackground(hover); }
+                public void mouseExited(java.awt.event.MouseEvent e)  { btn.setBackground(normal); }
+            });
+
             btn.addActionListener(e -> {
                 if (missChecker != null && !missChecker.isDone()) {
                     missChecker.cancel(true);
@@ -478,9 +464,26 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
                 // TODO: load and start the selected song, then transitionTo(Screen.GAME)
                 transitionTo(Screen.GAME);
                 missChecker = scheduler.scheduleAtFixedRate(() -> {
+                    long currentTime = currentSong.getTime();
                     for (Note note : chartData) {
-                        long currentTime = currentSong.getTime();
-                        if (!note.isHit() && currentTime - note.getTime() > 70000) {
+                        if (bot && Math.abs(currentTime - note.getTime()) < 30000 && !note.isHit()) {
+                            // Bot hits notes automatically as they arrive
+                            note.setHit(true);
+                            totalNotes++;
+                            combo++;
+                            judgementTime = note.getTime();
+                            lastJudgementOffset = 0 + " ms";
+                            if ((int) (Math.random() * 62) < 60) {
+                                lastJudgement = "Great!";
+                                accuracyTotal += 100.0;
+                                score += (long) combo * 500;
+                            } else {
+                                lastJudgement = "Good";
+                                accuracyTotal += 50.0;
+                                score += (long) combo * 250;
+                            }
+
+                        } else if (!note.isHit() && currentTime - note.getTime() > 150000) {
                             note.setHit(true);
                             accuracyTotal += 0.0;
                             combo = 0;
@@ -488,6 +491,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
                             totalNotes++;
                             lastJudgement = "Miss";
                             judgementTime = currentTime;
+                            lastJudgementOffset = "";
                         }
                     }
                 }, 0, 1, TimeUnit.MILLISECONDS);
@@ -502,14 +506,11 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     // -------------------------------------------------------------------------
     private void setAllVisible(boolean v) {
         playButton.setVisible(v);
-        settingsButton.setVisible(v);
         returnButton.setVisible(v);
         exitButton.setVisible(v);
         startButton.setVisible(v);
         stopButton.setVisible(v);
         resumeButton.setVisible(v);
-        volumeSlider.setVisible(v);
-        volumeLabel.setVisible(v);
         songSelectPane.setVisible(v);
     }
 
@@ -546,6 +547,11 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         if (screen != Screen.GAME || currentSong == null) return;
 
         int code = e.getKeyCode();
+
+        if (code == KeyEvent.VK_0) {
+            bot = !bot;
+        }
+
         if (code == KeyEvent.VK_F11) {
             toggleFullscreen();
         }
@@ -558,62 +564,66 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         codes.add(code);
         Input key = new Input(currentTime, codes);
 
-
-        if (!pressedKeys.isEmpty() && currentTime - pressedKeys.getLast().getTimePressed() < 30000) {
-            pressedKeys.getLast().addChordInput(code);
-            // System.out.println("Added to chord: " + pressedKeys.getLast().getKeyCodes());
-        } else {
-            pressedKeys.add(key);
-            // System.out.println("New input created: " + key.getKeyCodes());
-        }
-        if (!pressedKeys.isEmpty()) {
-            long diff = currentTime - pressedKeys.getLast().getTimePressed();
-            // System.out.println("Time diff from last key: " + diff + " microseconds");
-        }
-        Input lastInput = pressedKeys.getLast();
-        scheduler.schedule(() -> {
-            if (lastInput.isChecked()) return;
-            lastInput.setChecked(true);
-
-            int[] pressedCodes = Input.convert(lastInput.getKeyCodes());
-            for (Note note : chartData) {
-                if (Math.abs(currentTime - note.getTime()) < 150000 && !note.isHit()) {
-                    // System.out.println("Checking chord: " + Arrays.toString(pressedCodes));
-                    if (Arrays.equals(note.getLanes(), pressedCodes)) {
-                        note.setHit(true);
-                        combo++;
-                        totalNotes++;
-                        if (Math.abs(currentTime - note.getTime()) < 60000) {
-                            accuracyTotal += 99.0;
-                            score += combo * 500;
-                            greatCount++;
-                            judgementTime = currentTime;
-                            lastJudgement = "Great!";
-                        } else if (Math.abs(currentTime - note.getTime()) < 100000) {
-                            accuracyTotal += 50.0;
-                            score += combo * 250;
-                            goodCount++;
-                            judgementTime = currentTime;
-                            lastJudgement = "Good";
-                        } else {
-                            accuracyTotal += 33.3;
-                            score += combo * 100;
-                            badCount++;
-                            judgementTime = currentTime;
-                            lastJudgement = "Bad";
-                        }
-                    } else {
-                        accuracyTotal += 10.0;
-                        combo = 0;
-                        totalNotes++;
-                        missCount++;
-                        judgementTime = currentTime;
-                        lastJudgement = "Miss";
-                    }
-                    break;
-                }
+        if (!bot) {
+            if (!pressedKeys.isEmpty() && currentTime - pressedKeys.getLast().getTimePressed() < 30000) {
+                pressedKeys.getLast().addChordInput(code);
+                // System.out.println("Added to chord: " + pressedKeys.getLast().getKeyCodes());
+            } else {
+                pressedKeys.add(key);
+                // System.out.println("New input created: " + key.getKeyCodes());
             }
-        }, 30, TimeUnit.MILLISECONDS);
+            if (!pressedKeys.isEmpty()) {
+                long diff = currentTime - pressedKeys.getLast().getTimePressed();
+                // System.out.println("Time diff from last key: " + diff + " microseconds");
+            }
+            Input lastInput = pressedKeys.getLast();
+            scheduler.schedule(() -> {
+                if (lastInput.isChecked()) return;
+                lastInput.setChecked(true);
+
+                int[] pressedCodes = Input.convert(lastInput.getKeyCodes());
+                for (Note note : chartData) {
+                    if (Math.abs(currentTime - note.getTime()) < 150000 && !note.isHit()) {
+                        // System.out.println("Checking chord: " + Arrays.toString(pressedCodes));
+                        if (Arrays.equals(note.getLanes(), pressedCodes)) {
+                            note.setHit(true);
+                            combo++;
+                            totalNotes++;
+                            if (Math.abs(currentTime - note.getTime()) < 60000) {
+                                accuracyTotal += 100.0;
+                                score += (long) combo * 500;
+                                greatCount++;
+                                judgementTime = currentTime;
+                                lastJudgement = "Great!";
+
+                            } else if (Math.abs(currentTime - note.getTime()) < 100000) {
+                                accuracyTotal += 50.0;
+                                score += (long) combo * 250;
+                                goodCount++;
+                                judgementTime = currentTime;
+                                lastJudgement = "Good";
+                            } else {
+                                accuracyTotal += 33.3;
+                                score += (long) combo * 100;
+                                badCount++;
+                                judgementTime = currentTime;
+                                lastJudgement = "Bad";
+                            }
+                            lastJudgementOffset = (currentTime - note.getTime()) / 1000 + " ms";
+                        } else {
+                            accuracyTotal += 0.0;
+                            combo = 0;
+                            totalNotes++;
+                            missCount++;
+                            judgementTime = currentTime;
+                            lastJudgement = "Miss";
+                            lastJudgementOffset = "";
+                        }
+                        break;
+                    }
+                }
+            }, 30, TimeUnit.MILLISECONDS);
+        }
     }
     @Override
     public void keyReleased(KeyEvent e) {
