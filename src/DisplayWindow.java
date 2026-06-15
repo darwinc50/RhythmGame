@@ -250,8 +250,8 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
 
     private void drawHome(Graphics2D g) {
         g.setColor(Color.WHITE);
-        g.setFont(new Font("Serif", Font.BOLD, 48));
-        drawCenteredString(g, "Very Good Game", getWidth() / 2, 100);
+        g.setFont(new Font("Arial", Font.BOLD, 48));
+        drawCenteredString(g, "very hard rhythm game", getWidth() / 2, 100);
     }
 
     private void drawSongSelect(Graphics2D g) {
