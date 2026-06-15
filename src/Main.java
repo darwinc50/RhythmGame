@@ -5,7 +5,7 @@ import java.util.ArrayList;
 public class Main {
     public static void main(String[] args) {
         JFrame frame = new JFrame("sick pain in the ass game that Edward wanted to make we are dead-butt so screwed lol");
-        frame.setIconImage(new ImageIcon("src/background/spinnin.png").getImage()); //change app icon image
+        frame.setIconImage(new ImageIcon("src/background/spinnin.png").getImage());
         Song.grabSongs();
         ArrayList<Song> songs = Song.getSongs();
 
