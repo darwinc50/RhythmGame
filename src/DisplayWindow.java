@@ -17,16 +17,10 @@ import java.util.concurrent.TimeUnit;
 
 public class DisplayWindow extends JPanel implements MouseListener, KeyListener, ActionListener {
 
-    // -------------------------------------------------------------------------
-    // Screen state
-    // -------------------------------------------------------------------------
     private enum Screen { HOME, SONG_SELECT, GAME, SETTINGS }
 
     private Screen screen;
 
-    // -------------------------------------------------------------------------
-    // Game stats (non-final so they can actually change during gameplay)
-    // -------------------------------------------------------------------------
     private static int greatCount;
     private static int goodCount;
     private static int badCount;
@@ -50,57 +44,46 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     private boolean bot = false;
-    // -------------------------------------------------------------------------
-    // Input tracking
-    // -------------------------------------------------------------------------
+
     private ArrayList<Input> pressedKeys = new ArrayList<Input>();
     private boolean pauseMenuVisible = false;
 
-    // -------------------------------------------------------------------------
-    // Background images (loaded once, not on every repaint)
-    // -------------------------------------------------------------------------
+
     private BufferedImage bgHome;
     private BufferedImage bgSongSelect;
     private BufferedImage bgSettings;
     private BufferedImage bgGame;
     private BufferedImage currentBackground;
 
-    // -------------------------------------------------------------------------
-    // UI components
-    // -------------------------------------------------------------------------
     private final JButton playButton;
     private final JButton returnButton;
     private final JButton exitButton;
 
-    // Pause-menu controls (shown/hidden via ESC)
+
     private final JButton startButton;
     private final JButton stopButton;
     private final JButton resumeButton;
 
-    // Song select panel
+
     private final JScrollPane songSelectPane;
 
-    // -------------------------------------------------------------------------
-    // Dependencies
-    // -------------------------------------------------------------------------
+
     private static PlaySong currentSong;
     private final JFrame   parentFrame;
     private final Timer    repaintTimer;
 
-    // -------------------------------------------------------------------------
-    // Constructor
-    // -------------------------------------------------------------------------
+
     public DisplayWindow(JFrame frame) {
         this.parentFrame = frame;
 
         loadImages();
 
-        // --- Main nav buttons ---
+
         playButton = makeButton("PLAY", e -> transitionTo(Screen.SONG_SELECT));
-        playButton.setText("PLAY"); // Clears text so it doesn't render over your image file
+        playButton.setText("PLAY");
         returnButton = makeButton("Return To Home", e -> {
             currentChart = null;
-            chartData.clear();       // ← clear here too
+            chartData.clear();
             pressedKeys.clear();
             currentSong.stopSound();
             totalNotes = 0;
@@ -115,20 +98,18 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         });
         exitButton = makeButton("Exit Game", e -> System.exit(0));
 
-        // --- Pause menu buttons ---
+
         startButton  = makeButton("Start Music",  e -> currentSong.playSound());
         stopButton   = makeButton("Stop Music",   e -> currentSong.stopSound());
         resumeButton = makeButton("Resume Music", e -> currentSong.resumeSound());
 
-
-        // --- Song select scroll pane ---
         JPanel songListPanel = buildSongListPanel();
         songSelectPane = new JScrollPane(songListPanel);
-        // songSelectPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+
         songSelectPane.setPreferredSize(new Dimension(300, 900));
 
-        // Add everything; visibility is managed by transitionTo()
-        setLayout(null); // absolute layout so we can position manually
+
+        setLayout(null);
         add(exitButton);
         add(playButton);
         add(returnButton);
@@ -148,24 +129,19 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                // Only run once — remove self after first valid size
+
                 if (getWidth() > 0 && getHeight() > 0) {
                     removeComponentListener(this);
                     transitionTo(Screen.HOME);
                 }
             }
-        });// set initial state properly
+        });
     }
 
-
-    // -------------------------------------------------------------------------
-    // Screen transitions — ONE place that owns button visibility & background
-    // -------------------------------------------------------------------------
     private void transitionTo(Screen next) {
         screen = next;
-        pauseMenuVisible = false; // reset pause overlay on any nav
+        pauseMenuVisible = false;
 
-        // Hide everything first, then show what's needed
         setAllVisible(false);
 
         switch (screen) {
@@ -178,14 +154,14 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
             }
             case SONG_SELECT -> {
                 currentBackground = bgSongSelect;
-//                returnButton.setVisible(true);
+
                 songSelectPane.setVisible(true);
                 positionButton(returnButton, 20, 20, 180, 40);
                 songSelectPane.setBounds(20, 70, 300, 900);
             }
             case GAME -> {
                 currentBackground = null;
-                // game UI set up here as needed
+
             }
         }
 
@@ -200,23 +176,15 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         } else {
             currentSong.resumeSound();
         }
-        //startButton.setVisible(visible);
-        //stopButton.setVisible(visible);
-        //resumeButton.setVisible(visible);
         returnButton.setVisible(visible);
         if (visible) {
-            // Position pause buttons in the centre of the screen
-            // positionButton(startButton,  centerX(180), centerY(40) - 70, 180, 40);
             positionButton(returnButton,   centerX(180), centerY(40),      180, 40);
-            // positionButton(resumeButton, centerX(180), centerY(40) + 70, 180, 40);
         }
         revalidate();
         repaint();
     }
 
-    // -------------------------------------------------------------------------
-    // Painting — ONLY drawing here, no file I/O, no component creation
-    // -------------------------------------------------------------------------
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -227,7 +195,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,    RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         g2.setRenderingHint(RenderingHints.KEY_RENDERING,        RenderingHints.VALUE_RENDER_QUALITY);
 
-        // Draw background (black fallback if null)
+
         if (currentBackground != null) {
             g2.drawImage(currentBackground, 0, 0, getWidth(), getHeight(), null);
         } else {
@@ -259,10 +227,8 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         Font font = new Font("Arial", Font.BOLD, 75);
         g.setFont(font);
 
-        // Calculate the exact pixel width of the string
         int stringWidth = g.getFontMetrics(font).stringWidth("Select a Song");
 
-        // Dynamically center the text on a 1920px wide screen
         int x = (1920 - stringWidth) / 2;
         int y = 100;
 
@@ -305,7 +271,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
                 }
                 g.drawString(lastJudgement, getWidth() / 2 - 30, getHeight() - 80);
                 g.setFont(new Font("Arial", Font.BOLD, 20));
-                // g.drawString(lastJudgementOffset, getWidth() / 2 - 30, getHeight() - 120);
+
             } else {
                 lastJudgement = "";
             }
@@ -315,7 +281,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
 
     public void drawNotes(Graphics2D g) {
         long currentTime = currentSong.getTime();
-        // System.out.println(currentTime);
+
         for (Note note : chartData) {
             Color note1 = Note.convert(Arrays.copyOfRange(note.getLanes(), 0, 3));
             Color note2 = Note.convert(Arrays.copyOfRange(note.getLanes(), 3, 6));
@@ -324,7 +290,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
 
                 if (note1 != null) {
                     g.setColor(note1);
-                    int x = (1920/2 - 350) - (int)(offset / 1000) - 100; // ← subtract note width
+                    int x = (1920/2 - 350) - (int)(offset / 1000) - 100;
                     g.fillRect(x, 1080/2 - 225, 100, 100);
                 }
                 if (note2 != null) {
@@ -335,12 +301,6 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
             }
         }
 
-        /*
-        for (Note line: chartData) {
-            System.out.println(line);
-            System.out.println();
-        }
-        */
     }
 
     public void loadChart() {
@@ -369,7 +329,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
     }
 
     private void drawPauseOverlay(Graphics2D g) {
-        // Semi-transparent dark overlay
+
         g.setColor(new Color(0, 0, 0, 160));
         g.fillRect(0, 0, getWidth(), getHeight());
         g.setColor(Color.WHITE);
@@ -377,9 +337,6 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         drawCenteredString(g, "Paused", getWidth() / 2, 120);
     }
 
-    // -------------------------------------------------------------------------
-    // Key handling
-    // -------------------------------------------------------------------------
 
     private void toggleFullscreen() {
         parentFrame.dispose();
@@ -391,17 +348,13 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         requestFocusInWindow();
     }
 
-    // -------------------------------------------------------------------------
-    // Timer tick
-    // -------------------------------------------------------------------------
+
     @Override
     public void actionPerformed(ActionEvent e) {
         repaint();
     }
 
-    // -------------------------------------------------------------------------
-    // Image loading — called once in constructor
-    // -------------------------------------------------------------------------
+
     private void loadImages() {
         bgHome      = loadImage("src/background/home.jpg");
         bgSongSelect = loadImage("src/background/rhythm_home.jpg");
@@ -419,9 +372,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Song list panel — built once
-    // -------------------------------------------------------------------------
+
     private JPanel buildSongListPanel() {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -429,7 +380,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         for (Song song : Song.getSongs()) {
             JButton btn = new JButton(song.toString());
 
-            // Styling
+
             btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
             btn.setFont(new Font("Arial", Font.BOLD, 16));
             btn.setForeground(Color.WHITE);
@@ -444,7 +395,7 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
             btn.setAlignmentX(Component.LEFT_ALIGNMENT);
             btn.setHorizontalAlignment(SwingConstants.LEFT);
 
-            // Hover effect
+
             Color normal = new Color(40, 40, 60);
             Color hover  = new Color(70, 70, 110);
             btn.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -461,13 +412,13 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
                 currentSong.playSound();
                 currentChart = song.getChart();
                 loadChart();
-                // TODO: load and start the selected song, then transitionTo(Screen.GAME)
+
                 transitionTo(Screen.GAME);
                 missChecker = scheduler.scheduleAtFixedRate(() -> {
                     long currentTime = currentSong.getTime();
                     for (Note note : chartData) {
                         if (bot && Math.abs(currentTime - note.getTime()) < 30000 && !note.isHit()) {
-                            // Bot hits notes automatically as they arrive
+
                             note.setHit(true);
                             totalNotes++;
                             combo++;
@@ -501,9 +452,6 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         return panel;
     }
 
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
     private void setAllVisible(boolean v) {
         playButton.setVisible(v);
         returnButton.setVisible(v);
@@ -533,9 +481,10 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         g.drawString(text, x, y);
     }
 
-    // -------------------------------------------------------------------------
-    // Unused listener stubs
-    // -------------------------------------------------------------------------
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+    }
     @Override public void mouseClicked(MouseEvent e)  {}
     @Override public void mousePressed(MouseEvent e)  {}
     @Override public void mouseReleased(MouseEvent e) {}
@@ -567,14 +516,14 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
         if (!bot) {
             if (!pressedKeys.isEmpty() && currentTime - pressedKeys.getLast().getTimePressed() < 30000) {
                 pressedKeys.getLast().addChordInput(code);
-                // System.out.println("Added to chord: " + pressedKeys.getLast().getKeyCodes());
+
             } else {
                 pressedKeys.add(key);
-                // System.out.println("New input created: " + key.getKeyCodes());
+
             }
             if (!pressedKeys.isEmpty()) {
                 long diff = currentTime - pressedKeys.getLast().getTimePressed();
-                // System.out.println("Time diff from last key: " + diff + " microseconds");
+
             }
             Input lastInput = pressedKeys.getLast();
             scheduler.schedule(() -> {
@@ -624,9 +573,5 @@ public class DisplayWindow extends JPanel implements MouseListener, KeyListener,
                 }
             }, 30, TimeUnit.MILLISECONDS);
         }
-    }
-    @Override
-    public void keyReleased(KeyEvent e) {
-        // pressedKeys.removeIf(in -> e.getKeyCode() == in.getKeyCodes());
     }
 }
